@@ -1,6 +1,6 @@
 FROM registry.gitlab.com/locksidian/locksidian-ci:master
 
-COPY src/ /src
+COPY . /src
 
 RUN cd /src && \
     cargo build --release && \
