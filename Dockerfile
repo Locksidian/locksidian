@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM debian:latest
 
 COPY target/release/locksidian /opt/locksidian/locksidian
 
