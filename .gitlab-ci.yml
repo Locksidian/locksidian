@@ -1,4 +1,8 @@
-image: mrkloan/debian-rust:latest
+before_script:
+  - apt-get update
+  - apt-get install -y curl g++
+  - curl https://sh.rustup.rs/ -sSf | sh -s -- --default-toolchain stable -y
+  - export PATH=/root/.cargo/bin:$PATH
 
 test:
   script:
