@@ -1,5 +1,3 @@
-image: registry.gitlab.com/locksidian/locksidian-ci:master
-
 services:
   - docker:dind
 
@@ -11,14 +9,15 @@ variables:
   IMAGE_NAME: registry.gitlab.com/locksidian/locksidian:$CI_BUILD_REF_NAME
 
 test:
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
   stage: test
   script:
     - cargo test
 
 build:
+  image: docker:latest
   stage: build
   script:
-    - cargo build --release
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
     - docker build -t $IMAGE_NAME .
     - docker push $IMAGE_NAME
