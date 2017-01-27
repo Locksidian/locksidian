@@ -1,0 +1,5 @@
+image: mrkloan/debian-rust:latest
+
+test:
+  script:
+    - cargo test
