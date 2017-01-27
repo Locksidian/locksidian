@@ -1,4 +1,4 @@
-image: mrkloan/locksidian-ci:latest
+image: registry.gitlab.com/locksidian/locksidian-ci:master
 
 test:
   script:
