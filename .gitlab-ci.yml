@@ -6,7 +6,7 @@ stages:
   - build
 
 variables:
-  IMAGE_NAME: registry.gitlab.com/locksidian/locksidian:$CI_BUILD_REF_NAME
+  IMAGE_NAME: registry.gitlab.com/locksidian/locksidian:$CI_BUILD_REF_SLUG
 
 test:
   image: registry.gitlab.com/locksidian/locksidian-ci:master
