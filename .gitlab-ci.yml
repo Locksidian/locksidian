@@ -1,23 +1,35 @@
-services:
-  - docker:dind
-
 stages:
   - test
   - build
+  - deploy
 
 variables:
   IMAGE_NAME: registry.gitlab.com/locksidian/locksidian:$CI_BUILD_REF_SLUG
 
 test:
-  image: registry.gitlab.com/locksidian/locksidian-ci:master
   stage: test
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
   script:
     - cargo test
 
 build:
-  image: docker:latest
   stage: build
+  image: docker:latest
+  services:
+    - docker:dind
   script:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
     - docker build -t $IMAGE_NAME .
     - docker push $IMAGE_NAME
+
+pages:
+  stage: deploy
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
+  script:
+    - cargo doc --no-deps
+    - mv target/doc public
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
