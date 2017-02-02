@@ -11,6 +11,11 @@ $ docker pull registry.gitlab.com/locksidian/locksidian:master
 $ docker run --name locksidian -d registry.gitlab.com/locksidian/locksidian:master
 ```
 
+## Documentation
+
+The project's documentation is auto-generated after each push on the `master` branch and is immediately published on
+the [Locksidian GitLab Page](https://locksidian.gitlab.io/locksidian/locksidian).
+
 ## Contributors
 
  - [Valentin Fries](https://www.fries.io) ([GitHub](https://github.com/MrKloan))
