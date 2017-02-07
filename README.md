@@ -1,7 +1,7 @@
 # Locksidian
-[![build status](https://gitlab.com/locksidian/locksidian/badges/master/build.svg)](https://gitlab.com/locksidian/locksidian/commits/master)
+[![build status](https://gitlab.com/locksidian/locksidian/badges/master/build.svg)](https://gitlab.com/locksidian/locksidian/pipelines)
 
-> The one vault your data really needs.
+> The one vault your data really need.
 
 ## Installation
 
