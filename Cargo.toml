@@ -9,3 +9,7 @@ rust-crypto = "0.2.36"
 iron = "0.5.1"
 router = "0.5.1"
 iron-test = "0.5.0"
+serde_json = "0.9.5"
+
+[dependencies.bodyparser]
+git = "https://github.com/iron/body-parser.git"

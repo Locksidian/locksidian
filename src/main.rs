@@ -8,9 +8,14 @@
 // Third-party dependencies
 extern crate time;
 extern crate crypto;
-extern crate iron;
+
+#[macro_use]
+extern crate serde_json;
+
 #[macro_use(router, url_for)]
 extern crate router;
+extern crate iron;
+extern crate bodyparser;
 extern crate iron_test;
 
 // Project modules

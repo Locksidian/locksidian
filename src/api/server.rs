@@ -1,6 +1,7 @@
 //! API Server
 
-use iron::{Iron, Chain, Handler};
+use iron::prelude::*;
+use iron::Handler;
 
 use super::middleware;
 

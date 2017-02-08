@@ -18,7 +18,7 @@
 
 use time;
 
-use iron::{Request, Response, IronResult};
+use iron::prelude::*;
 use iron::middleware::AfterMiddleware;
 use iron::headers::{
     CacheControl, CacheDirective,
