@@ -1,7 +1,6 @@
 //! API Server
 
-use iron::{Iron, Chain};
-use router::Router;
+use iron::{Iron, Chain, Handler};
 
 use super::middleware;
 
@@ -16,16 +15,16 @@ impl Server {
         }
     }
 
-    fn chain(&self, router: Router) -> Chain {
-        let mut chain = Chain::new(router);
+    fn chain<H: Handler>(&self, handler: H) -> Chain {
+        let mut chain = Chain::new(handler);
 
         chain.link_after(middleware::HeadersMiddleware);
 
         chain
     }
 
-    pub fn start(&self, router: Router) {
-        let chain = self.chain(router);
+    pub fn start<H: Handler>(&self, handler: H) {
+        let chain = self.chain(handler);
         let server = Iron::new(chain).http(self.listen_addr.as_str());
 
         match server {

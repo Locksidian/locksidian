@@ -20,5 +20,5 @@ mod api;
 /// Locksidian entry point.
 fn main() {
     let server = api::Server::new(String::from("localhost:8080"));
-    server.start(api::routes());
+    server.start(api::router());
 }
