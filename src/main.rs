@@ -1,5 +1,3 @@
-//! [![build status](https://gitlab.com/locksidian/locksidian/badges/master/build.svg)](https://gitlab.com/locksidian/locksidian/pipelines)
-//!
 //! The root crate for the Locksidian project.
 //!
 //! ## Overview
@@ -8,10 +6,12 @@
 //! [blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)) technology.
 
 // Third-party dependencies
+extern crate time;
 extern crate crypto;
 extern crate iron;
 #[macro_use(router, url_for)]
 extern crate router;
+extern crate iron_test;
 
 // Project modules
 pub mod sec;

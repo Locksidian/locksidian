@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval"]
 
 [dependencies]
+time = "0.1.36"
 rust-crypto = "0.2.36"
-iron = "*"
-router = "*"
+iron = "0.5.1"
+router = "0.5.1"
+iron-test = "0.5.0"

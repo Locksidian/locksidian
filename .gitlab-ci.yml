@@ -29,7 +29,7 @@ pages:
   stage: deploy
   image: registry.gitlab.com/locksidian/locksidian-ci:master
   script:
-    - cargo doc --no-deps
+    - cargo rustdoc -- --no-defaults --passes strip-hidden --passes collapse-docs --passes unindent-comments --passes strip-priv-imports
     - mv target/doc public
   artifacts:
     paths:

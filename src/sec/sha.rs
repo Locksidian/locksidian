@@ -3,7 +3,9 @@
 use crypto::digest::Digest;
 use crypto::sha2::Sha512;
 
-/// Process the bytes slice (`&[u8]`) and return its SHA512 hash value.
+/// Process the bytes slice and return its SHA512 hash value.
+///
+/// Hash size: 512 bits = 64 bytes = 128 chars (hexadecimal string).
 ///
 /// Example usage :
 ///

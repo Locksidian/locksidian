@@ -3,6 +3,8 @@
 use iron::{Iron, Chain};
 use router::Router;
 
+use super::middleware;
+
 pub struct Server {
     listen_addr: String
 }
@@ -15,7 +17,10 @@ impl Server {
     }
 
     fn chain(&self, router: Router) -> Chain {
-        let chain = Chain::new(router);
+        let mut chain = Chain::new(router);
+
+        chain.link_after(middleware::HeadersMiddleware);
+
         chain
     }
 
