@@ -3,6 +3,11 @@
 
 > The one vault your data really need.
 
+Pure [Rust](https://www.rust-lang.org/) implementation of the
+[blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)) technology.
+
+Full project documentation can be found here : https://locksidian.gitlab.io/locksidian/locksidian
+
 ## Installation
 
 ```bash
@@ -15,7 +20,6 @@ $ docker run --name locksidian -d registry.gitlab.com/locksidian/locksidian:mast
 
 The project's documentation is auto-generated after each push on the `master` branch and is immediately published on
 the [Locksidian GitLab Page](https://locksidian.gitlab.io/locksidian/locksidian).
-
 
 ## Contributing
 

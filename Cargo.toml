@@ -5,3 +5,5 @@ authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval"]
 
 [dependencies]
 rust-crypto = "0.2.36"
+iron = "*"
+router = "*"

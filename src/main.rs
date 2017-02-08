@@ -4,15 +4,21 @@
 //!
 //! ## Overview
 //!
-//! Locksidian is a pure Rust implementation of a custom [blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)).
+//! Locksidian is a pure [Rust](https://www.rust-lang.org/) implementation of the
+//! [blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)) technology.
 
 // Third-party dependencies
 extern crate crypto;
+extern crate iron;
+#[macro_use(router, url_for)]
+extern crate router;
 
 // Project modules
 pub mod sec;
+mod api;
 
 /// Locksidian entry point.
 fn main() {
-    unimplemented!()
+    let server = api::Server::new(String::from("localhost:8080"));
+    server.start(api::routes());
 }
