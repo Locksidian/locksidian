@@ -1,7 +1,6 @@
 //! Node specific endpoint: `/node/*`
 
 use iron::prelude::*;
-use iron::status;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ValueStruct {
@@ -10,32 +9,19 @@ struct ValueStruct {
 }
 
 pub fn home(req: &mut Request) -> IronResult<Response> {
-    let json_body = body!(req);
-    println!("JSON: {:?}", json_body);
-
     match body!(req, ValueStruct) {
-        Ok(Some(value_struct)) => {
-            let mut sum = 0;
-
-            for i in value_struct.values {
-                sum = sum + i
-            }
-
-            println!("Struct sum: {:?}", sum);
+        Ok(Some(mut value_struct)) => {
+            value_struct.result = value_struct.values.iter().fold(0, |a, b| a + b);
+            response!(Ok, value_struct)
         },
-        Ok(None) => println!("No structure"),
-        Err(err) => println!("Error: {:?}", err)
+        Ok(None) => response!(BadRequest, {"error": "No content"}),
+        Err(err) => response!(BadRequest, {"error": err.to_string()})
     }
-
-    Ok(Response::with((status::Ok, json!({
-            "message": "Hello Node!"
-        }).to_string()
-    )))
 }
 
 #[cfg(test)]
 mod test {
-    use iron::Headers;
+    use iron::{Headers, status};
     use iron_test::{request, response};
 
     use api::endpoints::node;
@@ -48,9 +34,11 @@ mod test {
             &node::home
         ).unwrap();
 
+        assert_eq!(res.status.unwrap(), status::BadRequest);
+
         let json_body = response::extract_body_to_string(res);
         assert_eq!(json_body, json!({
-                "message": "Hello Node!"
+                "error": "No content"
             }).to_string()
         );
     }
