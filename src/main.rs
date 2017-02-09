@@ -10,7 +10,13 @@ extern crate time;
 extern crate crypto;
 
 #[macro_use]
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate serde_wat;
 
 #[macro_use(router, url_for)]
 extern crate router;

@@ -25,7 +25,9 @@ use iron::headers::{
     Pragma,
     Expires, HttpDate,
     AccessControlAllowOrigin,
+    ContentType
 };
+use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
 
 pub struct HeadersMiddleware;
@@ -47,6 +49,10 @@ impl AfterMiddleware for HeadersMiddleware {
             "default-src 'none'; frame-ancestors: 'none';".as_bytes()
         )]);
         res.headers.set(AccessControlAllowOrigin::Any);
+        res.headers.set(ContentType(Mime(
+            TopLevel::Application, SubLevel::Json,
+            vec![(Attr::Charset, Value::Utf8)])
+        ));
 
         Ok(res)
     }
@@ -82,5 +88,6 @@ mod test {
         assert!(res.headers.get_raw("X-Frame-Options").is_some());
         assert!(res.headers.get_raw("Content-Security-Policy").is_some());
         assert!(res.headers.has::<headers::AccessControlAllowOrigin>());
+        assert!(res.headers.has::<headers::ContentType>());
     }
 }

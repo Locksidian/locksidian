@@ -4,7 +4,11 @@ use iron::prelude::*;
 use iron::status;
 
 pub fn not_found(_: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::NotFound, "404 Not Found")))
+    Ok(Response::with((status::NotFound, json!({
+            "status": 404,
+            "error": "Not Found"
+        }).to_string()
+    )))
 }
 
 #[cfg(test)]
@@ -22,7 +26,11 @@ mod test {
             &error::not_found
         ).unwrap();
 
-        let bytes = response::extract_body_to_bytes(res);
-        assert_eq!(bytes, b"404 Not Found");
+        let json_body = response::extract_body_to_string(res);
+        assert_eq!(json_body, json!({
+                "status": 404,
+                "error": "Not Found"
+            }).to_string()
+        );
     }
 }

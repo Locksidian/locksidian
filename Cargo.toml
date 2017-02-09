@@ -6,10 +6,15 @@ authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval"]
 [dependencies]
 time = "0.1.36"
 rust-crypto = "0.2.36"
+
+serde = "0.9.6"
+serde_derive = "0.9.6"
+serde_json = "0.9.5"
+serde_wat = "0.1.0"
+
 iron = "0.5.1"
 router = "0.5.1"
 iron-test = "0.5.0"
-serde_json = "0.9.5"
 
 [dependencies.bodyparser]
 git = "https://github.com/iron/body-parser.git"

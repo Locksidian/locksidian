@@ -2,39 +2,33 @@
 
 use iron::prelude::*;
 use iron::status;
-use bodyparser::Json;
+use bodyparser::Struct;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ValueStruct {
+    values: Vec<u64>,
+    result: u64
+}
 
 pub fn home(req: &mut Request) -> IronResult<Response> {
-    let body = req.get::<Json>();
+    match req.get::<Struct<ValueStruct>>() {
+        Ok(Some(value_struct)) => {
+            let mut sum = 0;
 
-    match body {
-        Ok(Some(json)) => {
-            match json.get("values") {
-                Some(values) => {
-                    if values.is_array() {
-                        let arr = values.as_array().unwrap();
-                        let mut sum = 0;
-
-                        for i in arr {
-                            sum = sum + i.as_u64().unwrap()
-                        }
-
-                        println!("{:?}", sum);
-                        println!("{}", json!({"key": "value"}));
-                    }
-                    else {
-                        println!("Values is not an array...");
-                    }
-
-                },
-                None => println!("No values...")
+            for i in value_struct.values {
+                sum = sum + i
             }
+
+            println!("Struct sum: {:?}", sum);
         },
-        Ok(None) => println!("No body"),
+        Ok(None) => println!("No structure"),
         Err(err) => println!("Error: {:?}", err)
     }
 
-    Ok(Response::with((status::Ok, "Hello Node!")))
+    Ok(Response::with((status::Ok, json!({
+            "message": "Hello Node!"
+        }).to_string()
+    )))
 }
 
 #[cfg(test)]
@@ -52,7 +46,10 @@ mod test {
             &node::home
         ).unwrap();
 
-        let bytes = response::extract_body_to_bytes(res);
-        assert_eq!(bytes, b"Hello Node!");
+        let json_body = response::extract_body_to_string(res);
+        assert_eq!(json_body, json!({
+                "message": "Hello Node!"
+            }).to_string()
+        );
     }
 }
