@@ -2,7 +2,6 @@
 
 use iron::prelude::*;
 use iron::status;
-use bodyparser::Struct;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ValueStruct {
@@ -11,7 +10,10 @@ struct ValueStruct {
 }
 
 pub fn home(req: &mut Request) -> IronResult<Response> {
-    match req.get::<Struct<ValueStruct>>() {
+    let json_body = body!(req);
+    println!("JSON: {:?}", json_body);
+
+    match body!(req, ValueStruct) {
         Ok(Some(value_struct)) => {
             let mut sum = 0;
 

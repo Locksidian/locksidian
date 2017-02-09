@@ -1,5 +1,8 @@
 //! Locksidian's REST API.
 
+#[macro_use]
+mod macros;
+
 mod router;
 mod server;
 mod middleware;
