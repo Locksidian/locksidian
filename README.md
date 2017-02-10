@@ -27,6 +27,7 @@ the [Locksidian GitLab Page](https://locksidian.gitlab.io/locksidian/locksidian)
 
 In order to contribute to the project, you first have to follow these brief setup instructions:
 
+ - Use the `nightly` rust toolchain : `rustup default nightly`
  - If you are running Windows, the `gcc-rs` dependency requires that you set the `CC=gcc` environment variable in
     order to work properly.
  - If you are running an older 32 bits version of MinGW as your C toolchain, you will have to use the **i686** rust
