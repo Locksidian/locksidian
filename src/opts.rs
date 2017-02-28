@@ -10,6 +10,8 @@ fn build_opts() -> Options {
     opts.optflag("h", "help", "display this help menu");
     opts.optflag("v", "version", "output version information and exit");
 
+    opts.optopt("d", "daemon", "starts the Locksidian daemon service and HTTP REST API", "LISTEN_ADDR");
+
     opts
 }
 
