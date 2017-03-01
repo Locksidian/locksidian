@@ -1,4 +1,7 @@
-//! API Server
+//! HTTP REST API Server
+//!
+//! Launch the server daemon using either the `--daemon={listen_addr}` command line argument or the
+//! `LS_DAEMON={listen_addr}` environment variable.
 
 use iron::prelude::*;
 use iron::Handler;
@@ -18,7 +21,6 @@ impl Server {
 
     fn chain<H: Handler>(&self, handler: H) -> Chain {
         let mut chain = Chain::new(handler);
-
         chain.link_after(middleware::HeadersMiddleware);
 
         chain
@@ -29,8 +31,8 @@ impl Server {
         let server = Iron::new(chain).http(self.listen_addr.as_str());
 
         match server {
-            Ok(_) => println!("Listening on {}!", self.listen_addr),
-            Err(e) => panic!(e)
+            Ok(_) => println!("Locksidian daemon listening on: {}", self.listen_addr),
+            Err(err) => panic!(err.to_string())
         }
     }
 }

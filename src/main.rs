@@ -306,6 +306,7 @@
 //! the `HEAD` and `ORIGIN` blocks.
 
 // Third-party dependencies
+extern crate getopts;
 extern crate time;
 extern crate crypto;
 
@@ -322,11 +323,19 @@ extern crate bodyparser;
 extern crate iron_test;
 
 // Project modules
+mod opts;
 pub mod sec;
+
+mod cli;
 mod api;
+
+const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
+const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.
 fn main() {
-    let server = api::Server::new(String::from("localhost:8080"));
-    server.start(api::router());
+    let matches = opts::init();
+    cli::handle(matches);
 }
