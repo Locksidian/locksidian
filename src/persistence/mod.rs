@@ -1,11 +1,15 @@
 //! Data persistence module.
+//!
+//! Expose the `connect` method and the various `Repository` traits.
 
 mod repository;
 
 use sqlite::*;
 
-const DATABASE_PATH: &'static str = "dat";
+const DATABASE_PATH: &'static str = "locksidian.db";
 
+/// Method used to establish a connection to the persistence context of the application, based on
+/// SQLite.
 fn connect() -> Result<Connection> {
     open(DATABASE_PATH)
 }
