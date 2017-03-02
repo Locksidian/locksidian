@@ -322,11 +322,14 @@ extern crate iron;
 extern crate bodyparser;
 extern crate iron_test;
 
+extern crate sqlite;
+
 // Project modules
 mod opts;
 pub mod sec;
 
 mod cli;
+mod persistence;
 mod api;
 
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");

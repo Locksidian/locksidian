@@ -18,5 +18,7 @@ iron = "0.5.1"
 router = "0.5.1"
 iron-test = "0.5.0"
 
+sqlite="0.23.4"
+
 [dependencies.bodyparser]
 git = "https://github.com/iron/body-parser.git"

@@ -5,3 +5,6 @@ locksidian.iml
 # Cargo
 target
 Cargo.lock
+
+# Locksidian
+dat
