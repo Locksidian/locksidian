@@ -27,12 +27,15 @@ the [Locksidian GitLab Page](https://locksidian.gitlab.io/locksidian/locksidian)
 
 In order to contribute to the project, you first have to follow these brief setup instructions:
 
- - Use the `nightly` rust toolchain : `rustup default nightly`
+ - Use the `nightly` rust toolchain : `rustup default nightly`.
  - If you are running Windows, the `gcc-rs` dependency requires that you set the `CC=gcc` environment variable in
     order to work properly.
  - If you are running an older 32 bits version of MinGW as your C toolchain, you will have to use the **i686** rust
    toolchain : `rustup default stable-i686-pc-windows-gnu`. You might want to upgrade to `MinGW-w64` using [Win-builds](http://win-builds.org)
-   to continue using the 64 bits rust distribution.
+   to continue using the 64 bits rust distribution. Don't forget to update your `default-host` in order to use the GNU
+   toolchain: `rustup set default-host x86_64-pc-windows-gnu`.
+ - Install the [sqlite3](https://sqlite.org/download.html) shared library.
+                                                                              
 
 ### Commit guidelines
 
