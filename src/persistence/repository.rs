@@ -35,13 +35,12 @@ pub trait CommandRepository<T, U> {
 pub trait RepositoryMetadata {
 
     /// Execute the setup script for the entity managed by this repository.
-    fn setup(&self) -> Result<(), String>;
+    fn setup_table(&self) -> Result<(), String>;
 
     /// Execute the drop script for the entity managed by this repository.
-    fn drop(&self) -> Result<(), String>;
+    fn drop_table(&self) -> Result<(), String>;
 }
 
-#[allow(dead_code)]
 #[cfg(test)]
 mod test {
     use super::*;
@@ -66,20 +65,20 @@ mod test {
     }
 
     impl RepositoryMetadata for TestRepository {
-        fn setup(&self) -> Result<(), String> {
+        fn setup_table(&self) -> Result<(), String> {
             match self.connection.execute(
-                "CREATE TABLE test_entities(\
-                    id INTEGER PRIMARY KEY NOT NULL,\
-                    value TEXT DEFAULT ''\
+                "CREATE TABLE IF NOT EXISTS test_entities (\
+                    \"id\" INTEGER PRIMARY KEY NOT NULL,\
+                    \"value\" TEXT DEFAULT ''\
                 );\
-                CREATE UNIQUE INDEX test_entities_id_uindex ON test_entities (id);"
+                CREATE UNIQUE INDEX test_entities_id_uindex ON test_entities (\"id\");"
             ) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err.to_string())
             }
         }
 
-        fn drop(&self) -> Result<(), String> {
+        fn drop_table(&self) -> Result<(), String> {
             match self.connection.execute("DROP TABLE test_entities") {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err.to_string())
@@ -90,7 +89,7 @@ mod test {
     impl QueryRepository<TestEntity, i64> for TestRepository {
         fn get(&self, pk: i64) -> Option<TestEntity> {
             let mut cursor = self.connection.prepare(
-                "SELECT id, value FROM test_entities WHERE id = ?"
+                "SELECT \"id\", \"value\" FROM test_entities WHERE \"id\" = ?"
             ).unwrap().cursor();
 
             cursor.bind(&[Value::Integer(pk)]).unwrap();
@@ -108,7 +107,7 @@ mod test {
         fn get_all(&self) -> Option<Vec<TestEntity>> {
             let mut entities: Vec<TestEntity> = Vec::new();
             let mut cursor = self.connection.prepare(
-                "SELECT id, value FROM test_entities;"
+                "SELECT \"id\", \"value\" FROM test_entities;"
             ).unwrap().cursor();
 
             while let Some(row) = cursor.next().unwrap() {
@@ -125,7 +124,7 @@ mod test {
     impl CommandRepository<TestEntity, i64> for TestRepository {
         fn save(&self, entity: &TestEntity) -> Result<i64, String> {
             let mut cursor = self.connection.prepare(
-                "INSERT INTO test_entities VALUES (id = ?, value = ?)"
+                "INSERT INTO test_entities (\"id\", \"value\") VALUES (?, ?)"
             ).unwrap().cursor();
 
             cursor.bind(&[
@@ -141,7 +140,7 @@ mod test {
 
         fn update(&self, entity: &TestEntity) -> Result<i64, String> {
             let mut cursor = self.connection.prepare(
-                "UPDATE test_entities SET value = ? WHERE id = ?"
+                "UPDATE test_entities SET \"value\" = ? WHERE \"id\" = ?"
             ).unwrap().cursor();
 
             cursor.bind(&[
@@ -157,7 +156,7 @@ mod test {
 
         fn delete(&self, entity: &TestEntity) -> Result<bool, String> {
             let mut cursor = self.connection.prepare(
-                "DELETE FROM test_entities WHERE id = ?"
+                "DELETE FROM test_entities WHERE \"id\" = ?"
             ).unwrap().cursor();
 
             cursor.bind(&[Value::Integer(entity.id)]).unwrap();
@@ -171,10 +170,31 @@ mod test {
 
     #[test]
     fn huge_test() {
+        const ENTITY_ID: i64 = 1;
+        const FIRST_VALUE: &'static str = "First";
+        const SECOND_VALUE: &'static str = "Second";
+
         let connection = persistence::connect().unwrap();
         let repository = TestRepository::new(connection);
+        let entity = TestEntity {id: ENTITY_ID, value: String::from(FIRST_VALUE)};
 
-        // TODO
+        assert_eq!(repository.setup_table().unwrap(), ());
+        assert_eq!(repository.save(&entity).unwrap(), ENTITY_ID);
+        assert_eq!(repository.get_all().unwrap().len(), 1);
+
+        let mut persisted_entity = repository.get(ENTITY_ID).unwrap();
+        assert_eq!(persisted_entity.id, ENTITY_ID);
+        assert_eq!(persisted_entity.value, FIRST_VALUE);
+
+        persisted_entity.value = String::from(SECOND_VALUE);
+        assert_eq!(repository.update(&persisted_entity).unwrap(), ENTITY_ID);
+
+        persisted_entity = repository.get(ENTITY_ID).unwrap();
+        assert_eq!(persisted_entity.id, ENTITY_ID);
+        assert_eq!(persisted_entity.value, SECOND_VALUE);
+
+        assert!(repository.delete(&persisted_entity).is_ok());
+        assert_eq!(repository.drop_table().unwrap(), ());
     }
 }
 
