@@ -323,6 +323,10 @@ extern crate bodyparser;
 extern crate iron_test;
 
 extern crate sqlite;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
 
 // Project modules
 mod opts;

@@ -1,5 +1,7 @@
 //! Command & Query repository traits definition.
 
+use sqlite;
+
 /// Repository trait used to query a persisted entity.
 ///
 /// Use this trait to implement the `get` and `get_all` methods for a given entity `T` having the
@@ -35,13 +37,13 @@ pub trait CommandRepository<T, U> {
 pub trait RepositoryMetadata {
 
     /// Execute the setup script for the entity managed by this repository.
-    fn setup_table(&self) -> Result<(), String>;
+    fn setup_table(&self) -> sqlite::Result<()>;
 
     /// Execute the drop script for the entity managed by this repository.
-    fn drop_table(&self) -> Result<(), String>;
+    fn drop_table(&self) -> sqlite::Result<()>;
 }
 
-#[cfg(test)]
+/*#[cfg(test)]
 mod test {
     use super::*;
     use persistence;
@@ -196,5 +198,4 @@ mod test {
         assert!(repository.delete(&persisted_entity).is_ok());
         assert_eq!(repository.drop_table().unwrap(), ());
     }
-}
-
+}*/
