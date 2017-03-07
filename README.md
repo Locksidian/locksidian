@@ -34,9 +34,7 @@ In order to contribute to the project, you first have to follow these brief setu
    toolchain : `rustup default stable-i686-pc-windows-gnu`. You might want to upgrade to `MinGW-w64` using [Win-builds](http://win-builds.org)
    to continue using the 64 bits rust distribution. Don't forget to update your `default-host` in order to use the GNU
    toolchain: `rustup set default-host x86_64-pc-windows-gnu`.
- - Install the [sqlite3](https://sqlite.org/download.html) shared library.
                                                                               
-
 ### Commit guidelines
 
 When contributing to the `Locksidian` project, chances are that you will develop a feature that is requested by a specific
