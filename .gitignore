@@ -6,5 +6,5 @@ locksidian.iml
 target
 Cargo.lock
 
-# Locksidian
-locksidian.db
+# SQLite
+*.db

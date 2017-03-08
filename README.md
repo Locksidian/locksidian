@@ -34,6 +34,11 @@ In order to contribute to the project, you first have to follow these brief setu
    toolchain : `rustup default stable-i686-pc-windows-gnu`. You might want to upgrade to `MinGW-w64` using [Win-builds](http://win-builds.org)
    to continue using the 64 bits rust distribution. Don't forget to update your `default-host` in order to use the GNU
    toolchain: `rustup set default-host x86_64-pc-windows-gnu`.
+ - Install `lisqslite3` (Windows: https://www.sqlite.org/download.html , Debian package: `apt-get install libsqlite3-dev`).
+   Note: if the `-lsqlite3` flag is not recognized during compile time, try to copy all the `libsqlite.*` files into the
+   `lib` folder of your current Rust toolchain:
+   `<home>/.rustup/toolchains/nightly-x86_64-pc-windows-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib`
+   (this problem was only encountered on the Windows platform).
                                                                               
 ### Commit guidelines
 
