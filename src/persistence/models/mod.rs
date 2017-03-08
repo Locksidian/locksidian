@@ -1,3 +1,0 @@
-//! Persisted entities
-
-mod post;
