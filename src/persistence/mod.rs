@@ -17,8 +17,6 @@ pub mod prelude;
 use std::path::Path;
 use std::fs;
 
-use opts;
-
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
@@ -29,7 +27,7 @@ pub fn database_path() -> String {
 
 #[cfg(target_os = "windows")]
 pub fn database_path() -> String {
-    match opts::env("APPDATA") {
+    match ::opts::env("APPDATA") {
         Some(appdata) => format!("{}\\locksidian\\locksidian.db", appdata),
         None => String::from("locksidian.db")
     }
