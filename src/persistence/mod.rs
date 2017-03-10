@@ -11,7 +11,8 @@
 
 #[macro_use]
 mod macros;
-mod repository;
+pub mod repository;
+pub mod prelude;
 
 use std::path::Path;
 use std::fs;
@@ -62,7 +63,14 @@ pub fn get_connection(database_path: String) -> Result<SqliteConnection, String>
 
 /// Execute the setup script at startup in order to initialize the database schemas.
 pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
-    match connection.execute(r#""#) {
+    match connection.execute(r#"
+        CREATE TABLE IF NOT EXISTS `values` (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT  NOT NULL,
+            `value` INTEGER DEFAULT 0
+        );
+
+        INSERT INTO `values` (`value`) VALUES (1);
+    "#) {
         Ok(_) => Ok(()),
         Err(err) => Err(err.to_string())
     }
@@ -75,13 +83,13 @@ mod test {
 
     #[test]
     fn should_establish_a_connection() {
-        let connection: Result<SqliteConnection, String> = get_connection(String::from("test.db"));
+        let connection: Result<SqliteConnection, String> = get_connection(String::from("test-persistence.db"));
         assert!(connection.is_ok());
     }
 
     #[test]
     fn should_setup_the_database_schemas() {
-        let connection = get_connection(String::from("test.db")).expect("Unable to connect to the database");
+        let connection = get_connection(String::from("test-persistence.db")).expect("Unable to connect to the database");
         let setup = setup_database(&connection);
         assert!(setup.is_ok())
     }

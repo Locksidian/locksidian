@@ -1,6 +1,9 @@
 //! Node specific endpoint: `/node/*`
 
+mod value;
+
 use iron::prelude::*;
+use persistence::prelude::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ValueStruct {
@@ -8,7 +11,7 @@ struct ValueStruct {
     result: u64
 }
 
-pub fn home(req: &mut Request) -> IronResult<Response> {
+pub fn simple_add_values(req: &mut Request) -> IronResult<Response> {
     match body!(req, ValueStruct) {
         Ok(Some(mut value_struct)) => {
             value_struct.result = value_struct.values.iter().fold(0, |a, b| a + b);
@@ -16,6 +19,26 @@ pub fn home(req: &mut Request) -> IronResult<Response> {
         },
         Ok(None) => response!(BadRequest, {"error": "No content"}),
         Err(err) => response!(BadRequest, {"error": err.to_string()})
+    }
+}
+
+pub fn persisted_add_values(_: &mut Request) -> IronResult<Response> {
+    match get_connection(database_path()) {
+        Ok(connection) => {
+            let repository = value::ValueRepository::new(connection);
+
+            match repository.get_all() {
+                Some(values) => {
+                    let sum = values.iter()
+                                    .map(|v| v.value)
+                                    .fold(0, |a, b| a + b);
+
+                    response!(Ok, {"sum": sum, "values": values})
+                },
+                None => response!(NoContent, {})
+            }
+        },
+        Err(err) => response!(InternalServerError, {"error": err.to_string()})
     }
 }
 
@@ -31,7 +54,7 @@ mod test {
         let res = request::get(
             "http://localhost:8080/test",
             Headers::new(),
-            &test::home
+            &test::simple_add_values
         ).unwrap();
 
         assert_eq!(res.status.unwrap(), status::BadRequest);
