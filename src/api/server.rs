@@ -7,6 +7,7 @@ use iron::prelude::*;
 use iron::Handler;
 
 use super::middleware;
+use persistence::database_path;
 
 pub struct Server {
     listen_addr: String
@@ -21,6 +22,9 @@ impl Server {
 
     fn chain<H: Handler>(&self, handler: H) -> Chain {
         let mut chain = Chain::new(handler);
+
+        let pool_middleware = middleware::PoolMiddleware::new(database_path()).expect("Unable to create a connection pool");
+        chain.link_before(pool_middleware);
         chain.link_after(middleware::HeadersMiddleware);
 
         chain

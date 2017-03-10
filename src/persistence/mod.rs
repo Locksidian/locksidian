@@ -46,18 +46,22 @@ pub fn database_path() -> String {
 /// Method used to establish a connection to the persistence context of the application, based on
 /// SQLite.
 pub fn get_connection(database_path: String) -> Result<SqliteConnection, String> {
-    let fs_path = Path::new(database_path.as_str());
-
-    if !fs_path.exists() {
-        match fs_path.parent() {
-            Some(parent) => fs::create_dir_all(parent).unwrap(),
-            None => ()
-        }
-    }
+    check_database_path(database_path.as_ref());
 
     match SqliteConnection::establish(database_path.as_str()) {
         Ok(connection) => Ok(connection),
         Err(err) => Err(err.to_string())
+    }
+}
+
+/// Checks that the specified path exists on the file system. If it is not the case, create the
+/// parent directory structure.
+pub fn check_database_path(path: &Path) {
+    if !path.exists() {
+        match path.parent() {
+            Some(parent) => fs::create_dir_all(parent).unwrap(),
+            None => ()
+        }
     }
 }
 
@@ -78,8 +82,7 @@ pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use diesel::sqlite::SqliteConnection;
+    use persistence::prelude::*;
 
     #[test]
     fn should_establish_a_connection() {
