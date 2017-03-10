@@ -11,6 +11,9 @@ pub trait QueryRepository<T, U> {
 
     /// Get all the persisted `T` entities as a `Vec<T>`.
     fn get_all(&self) -> Option<Vec<T>>;
+
+    /// Return the current number of persisted entities of the `T` type.
+    fn count(&self) -> Result<i64, String>;
 }
 
 /// Repository trait used to command a persisted entity.
@@ -41,9 +44,6 @@ pub trait RepositoryMetadata {
     fn drop_table(&self) -> Result<(), String>;
 }
 
-#[allow(dead_code)]
-#[allow(unused_variables)]
-#[allow(unused_imports)]
 #[cfg(test)]
 mod test {
     use diesel;
@@ -61,7 +61,7 @@ mod test {
         }
     }
 
-    #[derive(Queryable, Insertable)]
+    #[derive(Queryable, Insertable, AsChangeset)]
     #[table_name="posts"]
     struct Post {
         id: i32,
@@ -117,6 +117,13 @@ mod test {
                 Err(_) => None
             }
         }
+
+        fn count(&self) -> Result<i64, String> {
+            match posts::table.count().first(&self.connection) {
+                Ok(count) => Ok(count),
+                Err(err) => Err(err.to_string())
+            }
+        }
     }
 
     impl CommandRepository<Post> for PostRepository {
@@ -128,32 +135,41 @@ mod test {
         }
 
         fn update(&self, entity: &Post) -> Result<usize, String> {
-            unimplemented!()
+            match diesel::update(posts::table.find(entity.id)).set(entity).execute(&self.connection) {
+                Ok(updated_rows) => Ok(updated_rows),
+                Err(err) => Err(err.to_string())
+            }
         }
 
         fn delete(&self, entity: &Post) -> Result<usize, String> {
-            unimplemented!()
+            match diesel::delete(posts::table.filter(posts::id.eq(entity.id))).execute(&self.connection) {
+                Ok(deleted_rows) => Ok(deleted_rows),
+                Err(err) => Err(err.to_string())
+            }
         }
     }
 
     #[test]
     fn test() {
-        const TEST_DB: &'static str = "test.db";
+        const ENTITY_ID: i32 = 1;
 
-        let connection = persistence::connect(TEST_DB).expect("Unable to connect to the database");
+        let connection = persistence::connect("test.db").expect("Unable to connect to the database");
         let repository = PostRepository::new(connection);
 
         repository.setup_table().expect("Unable to create the testing table");
 
-        let posts = repository.get_all();
-        assert!(posts.is_some());
-        assert_eq!(posts.unwrap().len(), 0);
+        let opt_posts = repository.get_all();
+        assert!(opt_posts.is_some());
+        assert_eq!(opt_posts.unwrap().len(), 0);
 
-        let post = repository.get(1);
-        assert!(post.is_none());
+        let opt_post = repository.get(ENTITY_ID);
+        assert!(opt_post.is_none());
+
+        let count = repository.count();
+        assert_eq!(count.unwrap(), 0);
 
         let new_post = Post {
-            id: 1,
+            id: ENTITY_ID,
             title: String::from("Some title"),
             body: String::from("Some body")
         };
@@ -162,9 +178,37 @@ mod test {
         assert!(inserted_rows.is_ok());
         assert_eq!(inserted_rows.unwrap(), 1);
 
-        let post = repository.get(1);
-        assert!(post.is_some());
-        assert_eq!(post.unwrap().id, 1);
+        let opt_post = repository.get(ENTITY_ID);
+        assert!(opt_post.is_some());
+
+        let count = repository.count();
+        assert_eq!(count.unwrap(), 1);
+
+        let mut post = opt_post.unwrap();
+        assert_eq!(post.id, ENTITY_ID);
+        assert_eq!(post.title, "Some title");
+        assert_eq!(post.body, "Some body");
+
+        post.title = String::from("The title");
+
+        let updated_rows = repository.update(&post);
+        assert!(updated_rows.is_ok());
+        assert_eq!(updated_rows.unwrap(), 1);
+
+        let opt_post = repository.get(ENTITY_ID);
+        assert!(opt_post.is_some());
+
+        let post = opt_post.unwrap();
+        assert_eq!(post.id, ENTITY_ID);
+        assert_eq!(post.title, "The title");
+        assert_eq!(post.body, "Some body");
+
+        let deleted_rows = repository.delete(&post);
+        assert!(deleted_rows.is_ok());
+        assert_eq!(deleted_rows.unwrap(), 1);
+
+        let opt_deleted_post = repository.get(ENTITY_ID);
+        assert!(opt_deleted_post.is_none());
 
         repository.drop_table().expect("Unable to drop the testing table");
     }
