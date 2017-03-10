@@ -8,6 +8,8 @@
 ///                 Entity structure ---|      |          |
 ///                        Primary key type ---|          |
 ///                               Repository structure ---|
+///
+/// Example: `crud_repository!(posts, Post, i32, PostRepository);`
 macro_rules! crud_repository {
     ($table:ident, $entity:ty, $pk:ty, $repository:ty) => {
         impl QueryRepository<$entity, $pk> for $repository {

@@ -1,4 +1,6 @@
 //! Command & Query repository traits definition.
+//!
+//! Agnostic repository pattern that can be implemented for any type of repository and/or connection.
 
 /// Repository trait used to query a persisted entity.
 ///
@@ -98,7 +100,7 @@ mod test {
     fn test() {
         const ENTITY_ID: i32 = 1;
 
-        let connection = persistence::get_connection("test.db").expect("Unable to connect to the database");
+        let connection = persistence::get_connection(String::from("test.db")).expect("Unable to connect to the database");
         let repository = PostRepository::new(connection);
 
         repository.setup_table().expect("Unable to create the testing table");

@@ -24,14 +24,14 @@ mod test {
     use iron::{Headers, status};
     use iron_test::{request, response};
 
-    use api::endpoints::node;
+    use api::endpoints::test;
 
     #[test]
     fn home() {
         let res = request::get(
             "http://localhost:8080/test",
             Headers::new(),
-            &node::home
+            &test::home
         ).unwrap();
 
         assert_eq!(res.status.unwrap(), status::BadRequest);

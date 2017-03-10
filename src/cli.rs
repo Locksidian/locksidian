@@ -30,7 +30,7 @@ pub fn handle(matches: Matches) {
 fn daemon(opt_addr: Option<String>) {
     match opt_addr {
         Some(listen_addr) => {
-            match get_connection(DATABASE_PATH) {
+            match get_connection(database_path()) {
                 Ok(connection) => {
                     setup_database(&connection).expect("Unable to initialize the database schemas");
 
