@@ -34,16 +34,6 @@ pub trait CommandRepository<T> {
     fn delete(&self, entity: &T) -> Result<usize, String>;
 }
 
-/// Define the setup and drop scripts for the specified repository.
-pub trait RepositoryMetadata {
-
-    /// Execute the setup script for the entity managed by this repository.
-    fn setup_table(&self) -> Result<(), String>;
-
-    /// Execute the drop script for the entity managed by this repository.
-    fn drop_table(&self) -> Result<(), String>;
-}
-
 #[cfg(test)]
 mod test {
     use diesel;
@@ -79,16 +69,15 @@ mod test {
                 connection: connection
             }
         }
-    }
 
-    impl RepositoryMetadata for PostRepository {
         fn setup_table(&self) -> Result<(), String> {
             match self.connection.execute(
-                r#"CREATE TABLE IF NOT EXISTS posts (
+                r#"CREATE TABLE IF NOT EXISTS "posts" (
                     "id" INTEGER PRIMARY KEY NOT NULL,
                     "title" TEXT DEFAULT '',
                     "body" TEXT DEFAULT ''
-                );"#
+                );
+                CREATE INDEX IF NOT EXISTS posts_id_index ON "posts" ("id");"#
             ) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err.to_string())
@@ -96,7 +85,7 @@ mod test {
         }
 
         fn drop_table(&self) -> Result<(), String> {
-            match self.connection.execute("DROP TABLE posts;")  {
+            match self.connection.execute(r#"DROP TABLE "posts";"#)  {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err.to_string())
             }
@@ -153,7 +142,7 @@ mod test {
     fn test() {
         const ENTITY_ID: i32 = 1;
 
-        let connection = persistence::connect("test.db").expect("Unable to connect to the database");
+        let connection = persistence::get_connection("test.db").expect("Unable to connect to the database");
         let repository = PostRepository::new(connection);
 
         repository.setup_table().expect("Unable to create the testing table");
