@@ -38,12 +38,7 @@ pub trait CommandRepository<T> {
 
 #[cfg(test)]
 mod test {
-    use diesel;
-    use diesel::prelude::*;
-    use diesel::sqlite::SqliteConnection;
-
-    use persistence;
-    use persistence::repository::*;
+    use persistence::prelude::*;
 
     table! {
         posts {
@@ -61,12 +56,12 @@ mod test {
         body: String
     }
 
-    struct PostRepository {
-        connection: SqliteConnection
+    struct PostRepository<'pool> {
+        connection: &'pool SqliteConnection
     }
 
-    impl PostRepository {
-        fn new(connection: SqliteConnection) -> PostRepository {
+    impl<'pool> PostRepository<'pool> {
+        fn new(connection: &SqliteConnection) -> PostRepository {
             PostRepository {
                 connection: connection
             }
@@ -94,14 +89,14 @@ mod test {
         }
     }
 
-    crud_repository!(posts, Post, i32, PostRepository);
+    crud_repository!(posts, Post, i32, PostRepository<'pool>);
 
     #[test]
     fn test() {
         const ENTITY_ID: i32 = 1;
 
-        let connection = persistence::get_connection(String::from("test-repository.db")).expect("Unable to connect to the database");
-        let repository = PostRepository::new(connection);
+        let connection = get_connection(String::from("test-repository.db")).expect("Unable to connect to the database");
+        let repository = PostRepository::new(&connection);
 
         repository.setup_table().expect("Unable to create the testing table");
 

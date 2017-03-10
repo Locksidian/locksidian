@@ -22,10 +22,10 @@ pub fn simple_add_values(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-pub fn persisted_add_values(_: &mut Request) -> IronResult<Response> {
-    match get_connection(database_path()) {
+pub fn persisted_add_values(req: &mut Request) -> IronResult<Response> {
+    match req.get_connection() {
         Ok(connection) => {
-            let repository = value::ValueRepository::new(connection);
+            let repository = value::ValueRepository::new(&*connection);
 
             match repository.get_all() {
                 Some(values) => {
@@ -38,7 +38,7 @@ pub fn persisted_add_values(_: &mut Request) -> IronResult<Response> {
                 None => response!(NoContent, {})
             }
         },
-        Err(err) => response!(InternalServerError, {"error": err.to_string()})
+        Err(msg) => response!(InternalServerError, {"error": msg})
     }
 }
 

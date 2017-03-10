@@ -327,6 +327,9 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
 
+extern crate r2d2;
+extern crate r2d2_diesel;
+
 // Project modules
 mod opts;
 pub mod sec;
@@ -336,9 +339,13 @@ mod cli;
 mod persistence;
 mod api;
 
+/// Package name
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
+/// Current version
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+/// Package description
 const DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
+/// Package authors
 const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.

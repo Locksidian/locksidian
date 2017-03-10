@@ -1,7 +1,3 @@
-use diesel;
-use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
-
 use persistence::prelude::*;
 
 table! {
@@ -22,17 +18,16 @@ pub struct Value {
     pub value: i32
 }
 
-pub struct ValueRepository {
-    connection: SqliteConnection
+pub struct ValueRepository<'pool> {
+    connection: &'pool SqliteConnection
 }
 
-impl ValueRepository {
-    pub fn new(connection: SqliteConnection) -> ValueRepository {
+impl<'pool> ValueRepository<'pool> {
+    pub fn new(connection: &SqliteConnection) -> ValueRepository {
         ValueRepository {
             connection: connection
         }
     }
 }
 
-crud_repository!(values, Value, i32, ValueRepository);
-
+crud_repository!(values, Value, i32, ValueRepository<'pool>);
