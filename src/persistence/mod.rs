@@ -2,6 +2,8 @@
 //!
 //! Expose the `connect` method and the various `Repository` traits.
 
+#[macro_use]
+mod macros;
 mod repository;
 
 use diesel::prelude::*;

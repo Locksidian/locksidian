@@ -92,51 +92,7 @@ mod test {
         }
     }
 
-    impl QueryRepository<Post, i32> for PostRepository {
-        fn get(&self, pk: i32) -> Option<Post> {
-            match posts::table.filter(posts::id.eq(pk)).first(&self.connection) {
-                Ok(post) => Some(post),
-                Err(_) => None
-            }
-        }
-
-        fn get_all(&self) -> Option<Vec<Post>> {
-            match posts::table.load(&self.connection) {
-                Ok(posts) => Some(posts),
-                Err(_) => None
-            }
-        }
-
-        fn count(&self) -> Result<i64, String> {
-            match posts::table.count().first(&self.connection) {
-                Ok(count) => Ok(count),
-                Err(err) => Err(err.to_string())
-            }
-        }
-    }
-
-    impl CommandRepository<Post> for PostRepository {
-        fn save(&self, entity: &Post) -> Result<usize, String> {
-            match diesel::insert(entity).into(posts::table).execute(&self.connection) {
-                Ok(inserted_rows) => Ok(inserted_rows),
-                Err(err) => Err(err.to_string())
-            }
-        }
-
-        fn update(&self, entity: &Post) -> Result<usize, String> {
-            match diesel::update(posts::table.find(entity.id)).set(entity).execute(&self.connection) {
-                Ok(updated_rows) => Ok(updated_rows),
-                Err(err) => Err(err.to_string())
-            }
-        }
-
-        fn delete(&self, entity: &Post) -> Result<usize, String> {
-            match diesel::delete(posts::table.filter(posts::id.eq(entity.id))).execute(&self.connection) {
-                Ok(deleted_rows) => Ok(deleted_rows),
-                Err(err) => Err(err.to_string())
-            }
-        }
-    }
+    crud_repository!(posts, Post, i32, PostRepository);
 
     #[test]
     fn test() {
