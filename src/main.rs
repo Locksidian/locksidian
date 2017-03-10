@@ -332,6 +332,7 @@ mod opts;
 pub mod sec;
 
 mod cli;
+#[macro_use]
 mod persistence;
 mod api;
 

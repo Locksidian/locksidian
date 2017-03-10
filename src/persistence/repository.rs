@@ -54,7 +54,7 @@ mod test {
     }
 
     #[derive(Queryable, Insertable, AsChangeset)]
-    #[table_name="posts"]
+    #[table_name = "posts"]
     struct Post {
         id: i32,
         title: String,
@@ -100,7 +100,7 @@ mod test {
     fn test() {
         const ENTITY_ID: i32 = 1;
 
-        let connection = persistence::get_connection(String::from("test.db")).expect("Unable to connect to the database");
+        let connection = persistence::get_connection(String::from("test-repository.db")).expect("Unable to connect to the database");
         let repository = PostRepository::new(connection);
 
         repository.setup_table().expect("Unable to create the testing table");
