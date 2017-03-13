@@ -35,22 +35,25 @@
 //! ## Sources
 //!
 //! The canonical location for the `Locksidian` project is on [GitLab](https://gitlab.com/locksidian)
-//! (the access is currently restricted to authorized users only).
+//! (the access is currently restricted to the development team members only).
 //!
-//! With each major releases, the project will be updated on GitHub under the [Locksidian Organization](https://github.com/locksidian).
+//! With each major releases, the project will be updated on GitHub under the
+//! [Locksidian Organization](https://github.com/locksidian).
 //!
-//! ## Deeper into the rabbit hole
+//! ## Specifications
 //!
 //! Some of the application concepts are explained below in what we could call a *specs draft*.
 //!
 //! ### Identity management
 //!
 //! Run the executable using an existing identity: `locksidian --identity={hash}`, or define the
-//! following environment variable: `LS_IDENTITY={hash}`.
+//! environment variable `LS_IDENTITY={hash}` to set an identity as *active*.
 //!
-//! Generate a new identity using an existing PEM-encoded RSA keypair: `locksidian --identity-import="/path/to/keypair.pem"`.
+//! Generate a new identity using an existing PEM-encoded RSA keypair:
+//! `locksidian --identity-import="/path/to/keypair.pem"`.
 //!
-//! Generate a new identity from scratch by specifying the keypair size (defaults to 4096) : `locksidian --identity-new={keypair_size}`.
+//! Generate a new identity from scratch by specifying the keypair size (defaults to 4096):
+//! `locksidian --identity-new={keypair_size}`.
 //!
 //! The `Identity` structure *could* be defined as follows:
 //!
@@ -94,7 +97,10 @@
 //!
 //! ### Peer-to-Peer network
 //!
-//! Run the executable in *peer mode* by specifying an entrypoint: `locksidian --entrypoint={addr}`,
+//! In order to start the `Locksidian` service, run the executable by specifying a listening address:
+//! `locksidian --daemon={listen_addr}`, or define the following environment variable: `LS_DAEMON={listen_addr}`.
+//!
+//! Run the executable in *peer mode* by specifying an entrypoint using `--entrypoint={addr}`,
 //! or define the following environment variable: `LS_ENTRYPOINT={addr}`
 //!
 //! The `Peer`structure *could* be defined as follows:
@@ -103,7 +109,9 @@
 //! struct Peer {
 //!     identity: String,   // Unique identifier for this peer
 //!     key: PKey,          // RSA public key
-//!     address: String     // HTTP(S) URL with port number
+//!     address: String,    // HTTP(S) URL with port number
+//!     last_sent: u64,     // Timestamp of the last time data were sent to this peer
+//!     last_recv: u64      // Timestamp of the last time data were received from this peer
 //! }
 //! ```
 //!
@@ -119,7 +127,8 @@
 //! X-LS-SIGNATURE: {json_payload_signature}
 //! {
 //!     "key": {identity.keypair.public_key},
-//!     "address": {node.address}
+//!     "address": {node.address},
+//!     "height": {HEAD.height}
 //! }
 //! ```
 //!
@@ -134,7 +143,16 @@
 //! adding the new `Peer` structure to their local peers registry.
 //!
 //! This way, a single peer address is needed to join the peer-to-peer network, and each new peer
-//! data are broadcasted to the entire network making it self-sufficient.
+//! data are sent to the entire network making it self-sufficient.
+//!
+//! If no entrypoint is specified at startup but the current node already has some peer addresses
+//! stored in its local registry, it will try to contact them one by one until its request to join
+//! the network is accepted.
+//!
+//! Beside of propagating the new peer to the network, the entrypoint node will use the `height`
+//! attribute of the new node to send him the next block that exists in the blockchain, if one exists.
+//! This way, a node that could have been disconnected for any period of time will still be able to
+//! catch up with its peers by fetching the missing blocks of its local registry.
 //!
 //! But a node can also start without specifying an `entrypoint`, in what we'll call a *standalone mode*.
 //! When a node starts in standalone mode, it will not try to join any existing peer-to-peer network
@@ -151,21 +169,22 @@
 //!
 //! ```rust
 //! struct Block {
-//!     data: String,           // JSON document
-//!     bytes: u64,             // Document's size in bytes
-//!     hash: String,           // SHA512 data checksum
-//!     timestamp: u64,         // Creation timestamp of the block
+//!     data: String,           // JSON document                            | Block data
 //!
-//!     nonce: u32,             // Proof of Work solution
-//!     author: String,         // Identity hash of the block author
-//!     signature: String,      // Signature of the block's hash using the author Private Key
+//!     data_hash: String,      // SHA512 data checksum                     | Block Header
+//!     timestamp: u64,         // Creation timestamp of the block          |
+//!     nonce: u32,             // Proof of Work solution                   |
+//!     previous: String,       // Hash of the previous block in the chain  |
 //!
-//!     height: u64,            // Block index relative to the main chain
-//!     previous: String,       // Hash of the previous block in the chain
-//!     next: String,           // Hash of the next block in the chain
-//!
-//!     received_at: u64,       // Reception timestamp of the block by the sending peer
-//!     received_from: String   // Identity hash of the peer from which this block has been received
+//!     hash: String,           // SHA512 Block Header checksum                                         | Block metadata
+//!     next: String,           // Hash of the next block in the chain                                  |
+//!     height: u64,            // Block index relative to the main chain                               |
+//!                                                                                                     |
+//!     received_at: u64,       // Reception timestamp of the block by the sending peer                 |
+//!     received_from: String   // Identity hash of the peer from which this block has been received    |
+//!                                                                                                     |
+//!     author: String,         // Identity hash of the block author                                    |
+//!     signature: String,      // Signature of the block's hash using the author Private Key           |
 //! }
 //! ```
 //!
@@ -196,19 +215,20 @@
 //! block.received_from = (current node identity)
 //! ```
 //!
-//! But in order to add this new block to the blockchain, the node has to solve a [Proof of Work](https://en.bitcoin.it/wiki/Proof_of_work)
-//! challenge. In `Locksidian`, the **Proof of Work** is implemented the following way:
+//! But in order to add this new block into the blockchain, the node has to solve a
+//! [Proof of Work](https://en.bitcoin.it/wiki/Proof_of_work) challenge. In `Locksidian`, the
+//! **Proof of Work** is implemented in the following way (**TODO**: completely revamp the PoW
+//! target calculation):
 //!
-//!  - The 8 [most significant bits](https://en.wikipedia.org/wiki/Most_significant_bit) (the first
+//!  - [*deprecated*] The 8 [most significant bits](https://en.wikipedia.org/wiki/Most_significant_bit) (the first
 //!    byte) of the block's hash is used to compute the PoW objective: the number of leading `0`
 //!    required in the PoW hash. The number is calculated as follows: `{byte} % 5 + 1`, which gives
 //!    us a window of `1` to `5` leading zeros, which feels a good compromise for this prototype.
 //!
-//!  - The `nonce`, an unsigned 32 bit number, is initialized to `0` and appended to the end of the
-//!    block's data (example: `{"message": "Hello World!"}0`). The SHA512 checksum of this payload
-//!    is computed and the number of leading zeros is counted. If it matches the PoW objective, the current
-//!    `nonce` value is stored in the structure. If the PoW is not satisfied, the `nonce` is incremented
-//!    and the payload checksum is recomputed; loop until the PoW is solved.
+//!  - The `nonce`, an unsigned 32 bit number, is initialized to `0` and stored in the Block Header
+//!    whose SHA512 checksum is computed. If the checksum value is lower then the PoW objective, then
+//!    the current `nonce` value is stored in the structure. If the PoW is not satisfied, the `nonce`
+//!    is incremented and the payload checksum is recomputed; loop until the PoW is solved.
 //!
 //! Once the PoW is solved, the block hash is signed using the `Identity` RSA Private Key to prove
 //! the ownership of the block and the remaining fields of the `Block` structure are initialized:
