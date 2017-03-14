@@ -9,7 +9,7 @@
 //!
 //! Locksidian is a pure [Rust](https://www.rust-lang.org/) implementation of the
 //! [blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)) technology, and was developed
-//! as a study project during our first year of Master degree in *Software Architecture*.
+//! as a study project during our first year of Master's degree in *Software Architecture*.
 //!
 //! Our objective is to provide the ability to store and certify the existence and integrity of any
 //! JSON document by storing and cryptographically signing them inside of the `Locksidian`
