@@ -1,16 +1,23 @@
 //! Persistence macros.
+//!
+//! # CRUD Repository
+//!
+//! Automagically implements the `QueryRepository<T, U>` and `CommandRepository<T>` traits to the
+//! provided repository structure.
+//!
+//! Usage:
+//!
+//! ```rust
+//! crud_repository!(entities, Entity, i32, id, EntityRepository);
+//!     // Table name ---^        ^      ^   ^        ^
+//!        // Entity structure ---|      |   |        |
+//!               // Primary key type ---|   |        |
+//!                   // Primary key name ---|        |
+//!                        // Repository structure ---|
+//! ```
+//!
+//! Example: `crud_repository!(posts, Post, i32, id, PostRepository);`
 
-/// Automagically implements the `QueryRepository<T, U>` and `CommandRepository<T>` traits to the
-/// provided repository structure.
-///
-/// Usage: crud_repository!(entities, Entity, i32, id, EntityRepository)
-///              Table name ---^        ^      ^   ^        ^
-///                 Entity structure ---|      |   |        |
-///                        Primary key type ---|   |        |
-///                            Primary key name ---|        |
-///                                 Repository structure ---|
-///
-/// Example: `crud_repository!(posts, Post, i32, id, PostRepository);`
 macro_rules! crud_repository {
     ($table:ident, $entity:ty, $pk:ty, $pk_name:ident, $repository:ty) => {
         impl<'pool> QueryRepository<$entity, $pk> for $repository {
