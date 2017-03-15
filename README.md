@@ -12,10 +12,25 @@ Full project documentation can be found here : https://locksidian.gitlab.io/lock
 
 ## Installation
 
+### From sources
+
+```bash
+$ docker build -t locksidian:latest .
+$ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d locksidian:latest
+```
+ 
+Or alternatively using Docker Compose:
+
+```bash
+$ docker-compose up -d
+```
+
+### From precompiled binaries
+
 ```bash
 $ docker login registry.gitlab.com
 $ docker pull registry.gitlab.com/locksidian/locksidian:master
-$ docker run --name locksidian -d registry.gitlab.com/locksidian/locksidian:master
+$ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d registry.gitlab.com/locksidian/locksidian:master
 ```
 
 ## Documentation

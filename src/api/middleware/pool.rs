@@ -21,7 +21,7 @@ impl typemap::Key for PoolMiddleware {
 }
 
 impl PoolMiddleware {
-    pub fn new(database_path: String) -> Result<PoolMiddleware, String>{
+    pub fn new(database_path: String) -> Result<PoolMiddleware, String> {
         check_database_path(database_path.as_ref());
 
         let config = Config::default();

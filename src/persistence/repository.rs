@@ -89,7 +89,7 @@ mod test {
         }
     }
 
-    crud_repository!(posts, Post, i32, PostRepository<'pool>);
+    crud_repository!(posts, Post, i32, id, PostRepository<'pool>);
 
     #[test]
     fn test() {

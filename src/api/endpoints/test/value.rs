@@ -30,4 +30,4 @@ impl<'pool> ValueRepository<'pool> {
     }
 }
 
-crud_repository!(values, Value, i32, ValueRepository<'pool>);
+crud_repository!(values, Value, i32, id, ValueRepository<'pool>);
