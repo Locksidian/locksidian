@@ -1,6 +1,6 @@
 //! Prelude for the `persistence` module.
 //!
-//! Re-export all the dependencies needed when using a persisted context.
+//! Re-export all the required dependencies when using a persisted context.
 
 use std::sync::Arc;
 

@@ -44,7 +44,7 @@
 //! ```bash
 //! $ docker login registry.gitlab.com
 //! $ docker pull registry.gitlab.com/locksidian/locksidian:master
-//! $ docker run --name locksidian -d registry.gitlab.com/locksidian/locksidian:master
+//! $ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d registry.gitlab.com/locksidian/locksidian:master
 //! ```
 //!
 //! ## Sources

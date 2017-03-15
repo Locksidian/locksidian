@@ -1,16 +1,19 @@
-//! Node specific endpoint: `/node/*`
+//! Test endpoints exposed at `/test`
 
 mod value;
 
 use iron::prelude::*;
 use persistence::prelude::*;
 
+/// Example structure used for (de)serialization showcase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ValueStruct {
     values: Vec<u64>,
     result: u64
 }
 
+/// Simple example of how you would use the `body!` and `response!` macros in order to (de)serialize
+/// data structures from the HTTP request and to the HTTP response.
 pub fn simple_add_values(req: &mut Request) -> IronResult<Response> {
     match body!(req, ValueStruct) {
         Ok(Some(mut value_struct)) => {
@@ -22,6 +25,8 @@ pub fn simple_add_values(req: &mut Request) -> IronResult<Response> {
     }
 }
 
+/// Simple example of how you would interact with the connection pool in order to retrieve a connection
+/// from the HTTP `Request` object, and how to use a `Repository` to interact with persisted entities.
 pub fn persisted_add_values(req: &mut Request) -> IronResult<Response> {
     match req.get_connection() {
         Ok(connection) => {

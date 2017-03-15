@@ -3,7 +3,16 @@
 //! `BeforeMiddleware` used to create a pool of connections at daemon startup and distribute it
 //! to the Iron handlers.
 //!
-//! A connection can then be gathered from the pool by using `req.get_connection()`.
+//! A connection can then be gathered from the pool by using:
+//!
+//! ```rust
+//! match req.get_connection() {
+//!     Ok(connection) => {
+//!         ...
+//!     },
+//!     Err(msg) => response!(InternalServerError, {"error": msg})
+//! }
+//! ```
 
 use std::sync::Arc;
 
@@ -21,6 +30,8 @@ impl typemap::Key for PoolMiddleware {
 }
 
 impl PoolMiddleware {
+
+    /// Connection pool configuration using a custom `Config` builder.
     pub fn new(database_path: String) -> Result<PoolMiddleware, String> {
         check_database_path(database_path.as_ref());
 

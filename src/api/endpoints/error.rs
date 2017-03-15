@@ -2,6 +2,7 @@
 
 use iron::prelude::*;
 
+/// `404 Not Found` endpoint.
 pub fn not_found(_: &mut Request) -> IronResult<Response> {
     response!(NotFound, {"error": "Not Found"})
 }

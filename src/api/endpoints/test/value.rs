@@ -7,6 +7,7 @@ table! {
     }
 }
 
+/// Example structure of persisted data.
 #[derive(
     Debug, Clone,
     Serialize, Deserialize,
@@ -18,6 +19,7 @@ pub struct Value {
     pub value: i32
 }
 
+/// Example repository structure initialized using the `crud_repository!` macro.
 pub struct ValueRepository<'pool> {
     connection: &'pool SqliteConnection
 }
