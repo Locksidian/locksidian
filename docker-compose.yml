@@ -1,0 +1,8 @@
+version: "2"
+services:
+  locksidian:
+    build: .
+    volumes:
+      - .:/opt/locksidian
+    ports:
+      - 8080:8080

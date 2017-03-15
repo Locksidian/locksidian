@@ -20,6 +20,21 @@
 //!
 //! ## Installation
 //!
+//! ### From sources
+//!
+//! ```bash
+//! $ docker build -t locksidian:latest .
+//! $ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d locksidian:latest
+//! ```
+//!
+//! Or alternatively using Docker Compose:
+//!
+//! ```bash
+//! $ docker-compose up -d
+//! ```
+//!
+//! ### From precompiled binaries
+//!
 //! The `Locksidian` blockchain is available to download as a [Docker](https://www.docker.com/) image,
 //! with 2 different tags:
 //!
