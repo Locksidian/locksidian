@@ -248,12 +248,6 @@
 //!    spam the network with huge documents, as the computation power required to mine the block
 //!    will increase exponentially every `32` bytes.
 //!
-//!  - In order to prevent a DDoS attack as well as spamming little documents onto the blockchain,
-//!    the number of blocks mined in the last 10 minutes by the current node will be counted
-//!    (using its `Identity` hash, stored in the `author` field of each block) and deduced from the
-//!    number of bits allocated to the PoW target. Say our node has mined 5 blocks in the last 10
-//!    minutes when computing our document: `508 - 5 = 503`, so the updated PoW target is now `2^503`.
-//!
 //!  - The `nonce`, an unsigned 32 bit number, is initialized to `0` and stored in the Block Header
 //!    whose SHA512 checksum is computed. If the checksum value is lower than the PoW target, then
 //!    the current `nonce` value is stored in the structure. If the PoW is not satisfied, the `nonce`
@@ -331,8 +325,7 @@
 //!
 //! The block referenced by the `previous` field will then be searched in the registry. If it is not
 //! present, the new `Block` is added to the registry and the node will request the missing block to
-//! its peers (**TODO**: define the method used to automatically request a missing block. Broadcast
-//! a message? Check peer by peer until the missing block is found?).
+//! its peers.
 //!
 //! If the `previous` block is found and its `next` field is empty, the new `Block` is stored in the
 //! registry and the previous block is updated: `previous.next = block.hash`, making the new block
