@@ -8,7 +8,11 @@ use super::endpoints;
 pub fn routes() -> Router {
     router!(
         // Node API
-        index: any "/" => endpoints::node::home,
+        index: any "/" => endpoints::info::node_info,
+
+        // Test endpoints
+        test: post "/test" => endpoints::test::simple_add_values,
+        persisted: get "/test" => endpoints::test::persisted_add_values,
 
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found

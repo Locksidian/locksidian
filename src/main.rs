@@ -20,6 +20,21 @@
 //!
 //! ## Installation
 //!
+//! ### From sources
+//!
+//! ```bash
+//! $ docker build -t locksidian:latest .
+//! $ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d locksidian:latest
+//! ```
+//!
+//! Or alternatively using Docker Compose:
+//!
+//! ```bash
+//! $ docker-compose up -d
+//! ```
+//!
+//! ### From precompiled binaries
+//!
 //! The `Locksidian` blockchain is available to download as a [Docker](https://www.docker.com/) image,
 //! with 2 different tags:
 //!
@@ -29,7 +44,7 @@
 //! ```bash
 //! $ docker login registry.gitlab.com
 //! $ docker pull registry.gitlab.com/locksidian/locksidian:master
-//! $ docker run --name locksidian -d registry.gitlab.com/locksidian/locksidian:master
+//! $ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d registry.gitlab.com/locksidian/locksidian:master
 //! ```
 //!
 //! ## Sources
@@ -322,16 +337,30 @@ extern crate iron;
 extern crate bodyparser;
 extern crate iron_test;
 
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_codegen;
+
+extern crate r2d2;
+extern crate r2d2_diesel;
+
 // Project modules
 mod opts;
 pub mod sec;
 
 mod cli;
+#[macro_use]
+mod persistence;
 mod api;
 
+/// Package name
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
+/// Current version
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+/// Package description
 const DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
+/// Package authors
 const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.

@@ -10,10 +10,25 @@ Full project documentation can be found here : https://locksidian.gitlab.io/lock
 
 ## Installation
 
+### From sources
+
+```bash
+$ docker build -t locksidian:latest .
+$ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d locksidian:latest
+```
+ 
+Or alternatively using Docker Compose:
+
+```bash
+$ docker-compose up -d
+```
+
+### From precompiled binaries
+
 ```bash
 $ docker login registry.gitlab.com
 $ docker pull registry.gitlab.com/locksidian/locksidian:master
-$ docker run --name locksidian -d registry.gitlab.com/locksidian/locksidian:master
+$ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d registry.gitlab.com/locksidian/locksidian:master
 ```
 
 ## Documentation
@@ -27,13 +42,19 @@ the [Locksidian GitLab Page](https://locksidian.gitlab.io/locksidian/locksidian)
 
 In order to contribute to the project, you first have to follow these brief setup instructions:
 
- - Use the `nightly` rust toolchain : `rustup default nightly`
+ - Use the `nightly` rust toolchain : `rustup default nightly`.
  - If you are running Windows, the `gcc-rs` dependency requires that you set the `CC=gcc` environment variable in
     order to work properly.
  - If you are running an older 32 bits version of MinGW as your C toolchain, you will have to use the **i686** rust
    toolchain : `rustup default stable-i686-pc-windows-gnu`. You might want to upgrade to `MinGW-w64` using [Win-builds](http://win-builds.org)
-   to continue using the 64 bits rust distribution.
-
+   to continue using the 64 bits rust distribution. Don't forget to update your `default-host` in order to use the GNU
+   toolchain: `rustup set default-host x86_64-pc-windows-gnu`.
+ - Install `lisqslite3` (Windows: https://www.sqlite.org/download.html , Debian package: `apt-get install libsqlite3-dev`).
+   Note: if the `-lsqlite3` flag is not recognized during compile time, try to copy all the `libsqlite.*` files into the
+   `lib` folder of your current Rust toolchain:
+   `<home>/.rustup/toolchains/nightly-x86_64-pc-windows-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib`
+   (this problem was only encountered on the Windows platform).
+                                                                              
 ### Commit guidelines
 
 When contributing to the `Locksidian` project, chances are that you will develop a feature that is requested by a specific
