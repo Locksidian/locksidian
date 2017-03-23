@@ -6,7 +6,7 @@
 use iron::prelude::*;
 use iron::Handler;
 
-use super::middleware;
+use api::middleware::*;
 use persistence::database_path;
 
 /// HTTP server exposing the `Locksidian` REST API.
@@ -32,10 +32,10 @@ impl Server {
         let mut chain = Chain::new(handler);
 
         chain.link_before(
-            middleware::PoolMiddleware::new(database_path())
-                .expect("Unable to create a connection pool")
+            PoolMiddleware::new(database_path()).expect("Unable to create a connection pool")
         );
-        chain.link_after(middleware::HeadersMiddleware);
+        chain.link_before(ClientMiddleware::new());
+        chain.link_after(HeadersMiddleware);
 
         chain
     }

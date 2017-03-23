@@ -1,0 +1,54 @@
+//! HTTP client middleware.
+//!
+//! `BeforeMiddleware` used to create an HTTP client shared between the API endpoints using Iron's
+//! request extension system.
+//!
+//! A client can then be gathered from the pool by using:
+//!
+//! ```rust
+//! match req.get_client() {
+//!     Ok(client) => {
+//!         ...
+//!     },
+//!     Err(msg) => response!(InternalServerError, {"error": msg})
+//! }
+//! ```
+
+use std::sync::Arc;
+
+use iron::prelude::*;
+use iron::{typemap, BeforeMiddleware};
+
+use api::client::*;
+
+pub struct ClientMiddleware {
+    client: Arc<Client>
+}
+
+impl typemap::Key for ClientMiddleware {
+    type Value = Arc<Client>;
+}
+
+impl ClientMiddleware {
+    pub fn new() -> ClientMiddleware {
+        ClientMiddleware {
+            client: Arc::new(Client::new())
+        }
+    }
+}
+
+impl BeforeMiddleware for ClientMiddleware {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        req.extensions.insert::<ClientMiddleware>(self.client.clone());
+        Ok(())
+    }
+}
+
+impl<'a, 'b> ClientExtractor for Request<'a, 'b> {
+    fn get_client(&self) -> Result<&Arc<Client>, String> {
+        match self.extensions.get::<ClientMiddleware>() {
+            Some(client) => Ok(client),
+            None => Err(String::from("No HTTP client is embedded in this request"))
+        }
+    }
+}

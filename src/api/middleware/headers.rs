@@ -29,7 +29,6 @@ use iron::headers::{
 };
 use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
-
 pub struct HeadersMiddleware;
 
 impl AfterMiddleware for HeadersMiddleware {

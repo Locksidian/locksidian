@@ -4,6 +4,7 @@ mod value;
 
 use iron::prelude::*;
 use persistence::prelude::*;
+use api::client::*;
 
 /// Example structure used for (de)serialization showcase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,6 +43,23 @@ pub fn persisted_add_values(req: &mut Request) -> IronResult<Response> {
                 },
                 None => response!(NoContent, {})
             }
+        },
+        Err(msg) => response!(InternalServerError, {"error": msg})
+    }
+}
+
+/// Simple HTTP client example.
+pub fn http_client(req: &mut Request) -> IronResult<Response> {
+    match req.get_client() {
+        Ok(client) => {
+            let mut res = client.get("http://jsonplaceholder.typicode.com/posts/1").send().unwrap();
+            let mut body: String = String::new();
+            res.read_to_string(&mut body).unwrap();
+
+            response!(Ok, {
+                "status": res.status.to_string(),
+                "body": body
+            })
         },
         Err(msg) => response!(InternalServerError, {"error": msg})
     }

@@ -13,6 +13,7 @@ pub fn routes() -> Router {
         // Test endpoints
         test: post "/test" => endpoints::test::simple_add_values,
         persisted: get "/test" => endpoints::test::persisted_add_values,
+        client: get "/test/client" => endpoints::test::http_client,
 
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found
