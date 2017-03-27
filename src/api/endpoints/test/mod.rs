@@ -4,13 +4,23 @@ mod value;
 
 use iron::prelude::*;
 use persistence::prelude::*;
-use api::client::*;
+use api::client::prelude::*;
 
 /// Example structure used for (de)serialization showcase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct ValueStruct {
     values: Vec<u64>,
     result: u64
+}
+
+/// Example structure used for (de)serialization showcase.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Post {
+    #[serde(rename="userId")]
+    user_id: i32,
+    id: i32,
+    title: String,
+    body: String
 }
 
 /// Simple example of how you would use the `body!` and `response!` macros in order to (de)serialize
@@ -51,15 +61,15 @@ pub fn persisted_add_values(req: &mut Request) -> IronResult<Response> {
 /// Simple HTTP client example.
 pub fn http_client(req: &mut Request) -> IronResult<Response> {
     match req.get_client() {
-        Ok(client) => {
-            let mut res = client.get("http://jsonplaceholder.typicode.com/posts/1").send().unwrap();
-            let mut body: String = String::new();
-            res.read_to_string(&mut body).unwrap();
-
-            response!(Ok, {
-                "status": res.status.to_string(),
-                "body": body
-            })
+        Ok(client) => match client.get("http://jsonplaceholder.typicode.com/posts/1").send() {
+            Ok(mut res) => match client_body!(res, Post) {
+                Ok(post) => response!(Ok, {
+                        "status": res.status.to_string(),
+                        "body": post
+                    }),
+                Err(msg) => response!(InternalServerError, {"error": msg})
+            },
+            Err(err) => response!(InternalServerError, {"error": err.to_string()})
         },
         Err(msg) => response!(InternalServerError, {"error": msg})
     }
@@ -73,7 +83,7 @@ mod test {
     use api::endpoints::test;
 
     #[test]
-    fn home() {
+    fn simple_add_values() {
         let res = request::get(
             "http://localhost:8080/test",
             Headers::new(),

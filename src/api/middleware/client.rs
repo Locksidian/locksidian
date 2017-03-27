@@ -14,12 +14,10 @@
 //! }
 //! ```
 
-use std::sync::Arc;
-
 use iron::prelude::*;
 use iron::{typemap, BeforeMiddleware};
 
-use api::client::*;
+use api::client::prelude::*;
 
 pub struct ClientMiddleware {
     client: Arc<Client>

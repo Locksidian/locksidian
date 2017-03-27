@@ -2,8 +2,7 @@
 //!
 //! Re-export the `hyper::Client` structure and define the `ClientExtractor` structure.
 
-use std::sync::Arc;
-
+pub use std::sync::Arc;
 pub use std::io::Read;
 pub use hyper::Client;
 

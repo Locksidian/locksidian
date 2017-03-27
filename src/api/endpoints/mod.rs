@@ -1,5 +1,5 @@
 //! API Endpoints definition.
 
 pub mod error;
-pub mod info;
+pub mod node;
 pub mod test;

@@ -8,7 +8,7 @@ use super::endpoints;
 pub fn routes() -> Router {
     router!(
         // Node API
-        index: any "/" => endpoints::info::node_info,
+        index: any "/" => endpoints::node::node_info,
 
         // Test endpoints
         test: post "/test" => endpoints::test::simple_add_values,
