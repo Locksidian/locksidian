@@ -1,76 +1,90 @@
 //! RSA algorithms, used to encrypt and decrypt data
+extern crate openssl;
 
-use sec::asymetric_cypher::AsymetricCypher;
+use sec::asymetric_cypher::*;
+use self::openssl::rsa::Rsa;
+use self::openssl::pkey::PKey;
+use self::openssl::sign::Signer;
+use self::openssl::sign::Verifier;
 
-/// Process the bytes slice and return its SHA512 hash value.
-///
-/// Hash size: 512 bits = 64 bytes = 128 chars (hexadecimal string).
-///
-/// Example usage :
-///
-/// ```rust
-/// use sec::rsa::sha512;
-///
-/// let hash = sha512("Hello World!".as_bytes());
-/// assert_eq!(hash, concat!(
-///     "861844d6704e8573fec34d967e20bcfe",
-///     "f3d424cf48be04e6dc08f2bd58c72974",
-///     "3371015ead891cc3cf1c9d34b49264b5",
-///     "10751b1ff9e537937bc46b5d6ff4ecc8"
-/// ));
-/// ```
-///
+use std::path::Path;
+use self::openssl::hash::MessageDigest;
 
-struct Rsa {
-    key_pair : KeyPair
+/// RSA operational structure.
+/// Designed to manage RSA cryptographic algorithm calls.
+struct RsaService {
+
+    pkey : PKey
+
 }
 
-impl AsymetricCypher for Rsa {
-    fn generate_key_pair(&self, message: Message) -> KeyPair {
+///
+impl RsaService {
+    pub fn new(pkey: PKey) -> RsaService {
+        RsaService {
+            pkey : pkey
+        }
+    }
+}
+
+impl AsymetricCypher for RsaService {
+    fn generate_key_pair(&self, size: u32) {
+        unimplemented!()
+        //self.pkey.rsa().generate(size);
+    }
+    fn encrypt_with_public_key(&self, message : &Message) -> Cypher {
         unimplemented!()
     }
 
-    fn cypher(&self) -> Cypher {
+    fn encrypt_with_private_key(&self, message : &Message) -> Cypher {
         unimplemented!()
     }
 
-    fn decypher(&self) -> String {
+    fn decrypt_with_public_key(&self, message : &Message) -> String {
         unimplemented!()
     }
 
-    fn import_public_key_from_file(&self, path: Path) -> PublicKey {
+    fn decrypt_with_private_key(&self, message : &Message) -> String {
         unimplemented!()
     }
 
-    fn import_private_key_from_file(&self, path: Path) -> PrivateKey {
+    fn import_public_key_from_file(&self, path: &Path) -> PublicKey {
         unimplemented!()
     }
 
-    fn import_private_key_from_file_with_passphrase(&self, path: Path, passphrase: Passphrase) -> PrivateKey {
+    fn import_private_key_from_file(&self, path: &Path) -> PrivateKey {
         unimplemented!()
     }
 
-    fn import_keys_from_file(&self, path: Path) -> KeyPair {
+    fn import_private_key_from_file_with_passphrase(&self, path: &Path, passphrase: Passphrase) -> PrivateKey {
         unimplemented!()
     }
 
-    fn export_public_key_to_file(&self, path: Path, public_key: &PublicKey) {
+    fn import_keys_from_file(&self, path: &Path) -> KeyPair {
         unimplemented!()
     }
 
-    fn export_private_key_to_file(&self, path: Path) {
+    fn export_public_key_to_file(&self, path: &Path) {
         unimplemented!()
     }
 
-    fn export_keys_to_file(&self, path: Path) {
+    fn export_private_key_to_file(&self, path: &Path) {
         unimplemented!()
     }
 
-    fn verify_signature(&self) -> bool {
+    fn export_keys_to_file(&self, path: &Path) {
         unimplemented!()
     }
 
-    fn sign(&self) {
-        unimplemented!()
+    fn verify_signature(&self, data: &Message, signature: &Signature) -> bool {
+        let mut verifier = Verifier::new(MessageDigest::sha256(), &self.pkey).unwrap();
+        verifier.update(data).unwrap();
+        return verifier.finish(&signature).unwrap();
+    }
+
+    fn sign(&self, data: &Message) -> SignedMessage {
+        let mut signer = Signer::new(MessageDigest::sha256(), &self.pkey).unwrap();
+        signer.update(data).unwrap();
+        return signer.finish().unwrap();
     }
 }
