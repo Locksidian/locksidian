@@ -3,6 +3,9 @@
 #[macro_use]
 mod macros;
 
+#[macro_use]
+mod client;
+
 mod router;
 mod server;
 mod middleware;

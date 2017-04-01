@@ -22,7 +22,7 @@ use diesel::sqlite::SqliteConnection;
 
 #[cfg(target_os = "linux")]
 pub fn database_path() -> String {
-    String::from("/opt/locksidian/locksidian.db")
+    String::from("~/.locksidian/locksidian.db")
 }
 
 #[cfg(target_os = "windows")]

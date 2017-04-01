@@ -372,6 +372,8 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 
+extern crate hyper;
+
 #[macro_use(router)]
 extern crate router;
 extern crate iron;
