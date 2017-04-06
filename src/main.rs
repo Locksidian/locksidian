@@ -397,6 +397,8 @@ mod cli;
 mod persistence;
 mod api;
 
+mod blockchain;
+
 /// Package name
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
 /// Current version
