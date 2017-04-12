@@ -2,7 +2,7 @@
 name = "locksidian"
 version = "0.1.0"
 description = "The one vault your data really need"
-authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval<aurelien.duval6@gmail.com>"]
+authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval <aurelien.duval6@gmail.com>"]
 
 [dependencies]
 getopts = "0.2"
