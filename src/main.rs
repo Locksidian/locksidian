@@ -408,6 +408,8 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.
 fn main() {
-    let matches = opts::init();
-    cli::handle(matches);
+    match opts::init() {
+        Ok(matches) => cli::handle(matches),
+        Err(msg) => println!("{}\n\n{}", msg, opts::usage())
+    }
 }

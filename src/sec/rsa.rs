@@ -75,7 +75,7 @@ use openssl::hash::MessageDigest;
 /// `RSA` operational structure.
 ///
 /// Designed to manage RSA cryptographic algorithm calls.
-struct Rsa {
+pub struct Rsa {
     pkey: PKey
 }
 
@@ -116,14 +116,19 @@ impl Rsa {
 
     /// Instantiate a new `RSA` structure by generating a new keypair of the given `size`.
     pub fn generate(size: u32) -> Result<Rsa, String> {
-        match rsa::Rsa::generate(size) {
-            Ok(rsa) => match PKey::from_rsa(rsa) {
-                Ok(pkey) => Ok(Rsa {
-                    pkey: pkey
-                }),
-                Err(pkey_err) => Err(pkey_err.to_string())
-            },
-            Err(rsa_err) => Err(rsa_err.to_string())
+        if size % 1024 == 0 && size >= 2048 {
+            match rsa::Rsa::generate(size) {
+                Ok(rsa) => match PKey::from_rsa(rsa) {
+                    Ok(pkey) => Ok(Rsa {
+                        pkey: pkey
+                    }),
+                    Err(pkey_err) => Err(pkey_err.to_string())
+                },
+                Err(rsa_err) => Err(rsa_err.to_string())
+            }
+        }
+        else {
+            Err(format!("Invalid bit size specified: {}. The keypair bit size must be a multiple of 1024 and greater or equals to 2048.", size))
         }
     }
 
@@ -195,5 +200,28 @@ impl Rsa {
             Ok(pem) => Ok(pem),
             Err(err) => Err(err.to_string())
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Rsa;
+
+    #[test]
+    fn should_generate_a_4096_bits_keypair() {
+        let keypair = Rsa::generate(4096);
+        assert!(keypair.is_ok());
+    }
+
+    #[test]
+    fn should_not_generate_a_lower_than_2048_keypair() {
+        let keypair = Rsa::generate(1024);
+        assert!(keypair.is_err());
+    }
+
+    #[test]
+    fn should_not_generate_a_keypair_with_an_invalid_bit_size() {
+        let keypair = Rsa::generate(3000);
+        assert!(keypair.is_err());
     }
 }
