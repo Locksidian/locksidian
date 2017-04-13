@@ -134,12 +134,15 @@ impl Rsa {
 
     /// Encrypt the provided `message` slice using the RSA public key.
     fn encrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
-        let mut buffer: Vec<u8> = Vec::new();
-
         match self.pkey.rsa() {
-            Ok(rsa) => match rsa.public_encrypt(message, &mut buffer, PKCS1_PADDING) {
-                Ok(_) => Ok(buffer),
-                Err(rsa_err) => Err(rsa_err.to_string())
+            Ok(rsa) => {
+                let buffer_size = rsa.size();
+                let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
+
+                match rsa.public_encrypt(message, &mut buffer, PKCS1_PADDING) {
+                    Ok(_) => Ok(buffer),
+                    Err(rsa_err) => Err(rsa_err.to_string())
+                }
             },
             Err(pkey_err) => Err(pkey_err.to_string())
         }
@@ -147,12 +150,15 @@ impl Rsa {
 
     /// Decrypt the provided `message` slice using the RSA private key.
     fn decrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
-        let mut buffer: Vec<u8> = Vec::new();
-
         match self.pkey.rsa() {
-            Ok(rsa) => match rsa.private_decrypt(message, &mut buffer, PKCS1_PADDING) {
-                Ok(_) => Ok(buffer),
-                Err(rsa_err) => Err(rsa_err.to_string())
+            Ok(rsa) => {
+                let buffer_size = rsa.size();
+                let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
+
+                match rsa.private_decrypt(message, &mut buffer, PKCS1_PADDING) {
+                    Ok(_) => Ok(buffer),
+                    Err(rsa_err) => Err(rsa_err.to_string())
+                }
             },
             Err(pkey_err) => Err(pkey_err.to_string())
         }
@@ -223,5 +229,69 @@ mod test {
     fn should_not_generate_a_keypair_with_an_invalid_bit_size() {
         let keypair = Rsa::generate(3000);
         assert!(keypair.is_err());
+    }
+
+    #[test]
+    fn should_sign_and_verfiy_message() {
+        let keypair = Rsa::generate(2048);
+        assert!(keypair.is_ok());
+
+        let keypair = keypair.unwrap();
+        let message = b"Hello World!";
+
+        let signature = keypair.sign(message);
+        assert!(signature.is_ok());
+
+        let signature = signature.unwrap();
+        let is_valid = keypair.verify_signature(message, signature.as_slice());
+        assert!(is_valid.is_ok());
+        assert!(is_valid.unwrap());
+    }
+
+    #[test]
+    fn should_encrypt_and_decrypt_message() {
+        let keypair = Rsa::generate(2048);
+        assert!(keypair.is_ok());
+
+        let keypair = keypair.unwrap();
+        let message = b"Hello World!";
+
+        let encrypted = keypair.encrypt(message);
+        assert!(encrypted.is_ok());
+
+        let encrypted = encrypted.unwrap();
+        let decrypted = keypair.decrypt(encrypted.as_slice());
+        assert!(decrypted.is_ok());
+
+        let decrypted = decrypted.unwrap();
+        assert_eq!(message, decrypted.as_slice());
+    }
+
+    /*#[test]
+    fn should_export_and_import_public_key() {
+        let keypair = Rsa::generate(2048);
+        assert!(keypair.is_ok());
+
+        let keypair = keypair.unwrap();
+        let pem = keypair.export_public_key();
+        assert!(pem.is_ok());
+
+        let pem = pem.unwrap();
+        let keypair = Rsa::from_public_key(pem.as_slice());
+        assert!(keypair.is_ok());
+    }*/
+
+    #[test]
+    fn should_export_and_import_private_key() {
+        let keypair = Rsa::generate(2048);
+        assert!(keypair.is_ok());
+
+        let keypair = keypair.unwrap();
+        let pem = keypair.export_private_key();
+        assert!(pem.is_ok());
+
+        let pem = pem.unwrap();
+        let keypair = Rsa::from_private_key(pem.as_slice(), "");
+        assert!(keypair.is_ok());
     }
 }
