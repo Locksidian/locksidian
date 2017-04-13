@@ -388,6 +388,8 @@ extern crate diesel_codegen;
 extern crate r2d2;
 extern crate r2d2_diesel;
 
+extern crate openssl;
+
 // Project modules
 mod opts;
 pub mod sec;
@@ -410,6 +412,8 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.
 fn main() {
-    let matches = opts::init();
-    cli::handle(matches);
+    match opts::init() {
+        Ok(matches) => cli::handle(matches),
+        Err(msg) => println!("{}\n\n{}", msg, opts::usage())
+    }
 }
