@@ -15,12 +15,12 @@ fn build_opts() -> Options {
     opts
 }
 
-pub fn init() -> Matches {
+pub fn init() -> Result<Matches, String> {
     let args: Vec<String> = env::args().map(|arg| arg.to_string()).collect();
 
     match build_opts().parse(&args[1..]) {
-        Ok(matcher) => matcher,
-        Err(err) => panic!(err.to_string())
+        Ok(matcher) => Ok(matcher),
+        Err(err) => Err(err.to_string())
     }
 }
 
@@ -45,14 +45,4 @@ pub fn usage() -> String {
     );
 
     build_opts().usage(&brief)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn opts_init_should_not_panic() {
-        init();
-    }
 }
