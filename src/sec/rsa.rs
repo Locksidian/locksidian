@@ -137,10 +137,13 @@ impl Rsa {
         match self.pkey.rsa() {
             Ok(rsa) => {
                 let buffer_size = rsa.size();
-                let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
+                let mut buffer: Vec<u8> = vec![0; buffer_size];
 
                 match rsa.public_encrypt(message, &mut buffer, PKCS1_PADDING) {
-                    Ok(_) => Ok(buffer),
+                    Ok(length) => {
+                        buffer.resize(length, 0);
+                        Ok(buffer)
+                    },
                     Err(rsa_err) => Err(rsa_err.to_string())
                 }
             },
@@ -153,10 +156,13 @@ impl Rsa {
         match self.pkey.rsa() {
             Ok(rsa) => {
                 let buffer_size = rsa.size();
-                let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
+                let mut buffer: Vec<u8> = vec![0; buffer_size];
 
                 match rsa.private_decrypt(message, &mut buffer, PKCS1_PADDING) {
-                    Ok(_) => Ok(buffer),
+                    Ok(length) => {
+                        buffer.resize(length, 0);
+                        Ok(buffer)
+                    },
                     Err(rsa_err) => Err(rsa_err.to_string())
                 }
             },
@@ -267,7 +273,7 @@ mod test {
         assert_eq!(message, decrypted.as_slice());
     }
 
-    /*#[test]
+    #[test]
     fn should_export_and_import_public_key() {
         let keypair = Rsa::generate(2048);
         assert!(keypair.is_ok());
@@ -279,7 +285,7 @@ mod test {
         let pem = pem.unwrap();
         let keypair = Rsa::from_public_key(pem.as_slice());
         assert!(keypair.is_ok());
-    }*/
+    }
 
     #[test]
     fn should_export_and_import_private_key() {
