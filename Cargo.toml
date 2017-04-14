@@ -2,10 +2,11 @@
 name = "locksidian"
 version = "0.1.0"
 description = "The one vault your data really need"
-authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval"]
+authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval <aurelien.duval6@gmail.com>"]
 
 [dependencies]
 getopts = "0.2"
+openssl = "0.9.10"
 time = "0.1.36"
 rust-crypto = "0.2.36"
 

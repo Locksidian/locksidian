@@ -56,6 +56,15 @@ In order to contribute to the project, you first have to follow these brief setu
    `lib` folder of your current Rust toolchain:
    `<home>/.rustup/toolchains/nightly-x86_64-pc-windows-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib`
    (this problem was only encountered on the Windows platform).
+ - If building on Windows, install [OpenSSL](http://slproweb.com/products/Win32OpenSSL.html) and define the following
+   environment variables: 
+   
+```text
+DEP_OPENSSL_INCLUDE=C:\OpenSSL-Win64\include
+OPENSSL_INCLUDE_DIR=C:\OpenSSL-Win64\include
+OPENSSL_LIB_DIR=C:\OpenSSL-Win64\lib\VC
+OPENSSL_LIBS=ssleay32MT:libeay32MT
+```
                                                                               
 ### Commit guidelines
 
