@@ -1,7 +1,5 @@
 //! Test endpoints exposed at `/test`
 
-mod value;
-
 use iron::prelude::*;
 use persistence::prelude::*;
 use api::client::prelude::*;

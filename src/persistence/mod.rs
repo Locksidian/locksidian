@@ -65,7 +65,8 @@ pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
     match connection.execute(r#"
         CREATE TABLE IF NOT EXISTS `identities` (
             `hash` TEXT PRIMARY KEY NOT NULL,
-            `keypair` BLOB NOT NULL
+            `keypair` BLOB NOT NULL,
+            `active` BOOLEAN DEFAULT FALSE
         );
     "#) {
         Ok(_) => Ok(()),
