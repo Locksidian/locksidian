@@ -364,7 +364,10 @@
 // Third-party dependencies
 extern crate getopts;
 extern crate time;
+
+extern crate openssl;
 extern crate crypto;
+extern crate rustc_serialize;
 
 extern crate serde;
 #[macro_use]
@@ -388,7 +391,6 @@ extern crate diesel_codegen;
 extern crate r2d2;
 extern crate r2d2_diesel;
 
-extern crate openssl;
 
 // Project modules
 mod opts;

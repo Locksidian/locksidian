@@ -133,7 +133,7 @@ impl Rsa {
     }
 
     /// Encrypt the provided `message` slice using the RSA public key.
-    fn encrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn encrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
         match self.pkey.rsa() {
             Ok(rsa) => {
                 let buffer_size = rsa.size();
@@ -152,7 +152,7 @@ impl Rsa {
     }
 
     /// Decrypt the provided `message` slice using the RSA private key.
-    fn decrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn decrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
         match self.pkey.rsa() {
             Ok(rsa) => {
                 let buffer_size = rsa.size();
@@ -171,7 +171,7 @@ impl Rsa {
     }
 
     /// Sign the provided `message` using the RSA private key.
-    fn sign(&self, message: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn sign(&self, message: &[u8]) -> Result<Vec<u8>, String> {
         match Signer::new(MessageDigest::sha512(), &self.pkey) {
             Ok(mut signer) => match signer.update(message) {
                 Ok(_) => match signer.finish() {
@@ -185,7 +185,7 @@ impl Rsa {
     }
 
     /// Verify that the provided `message` was signed using this RSA keypair.
-    fn verify_signature(&self, message: &[u8], signature: &[u8]) -> Result<bool, String> {
+    pub fn verify_signature(&self, message: &[u8], signature: &[u8]) -> Result<bool, String> {
         match Verifier::new(MessageDigest::sha512(), &self.pkey) {
             Ok(mut verifier) => match verifier.update(message) {
                 Ok(_) => match verifier.finish(signature) {
@@ -199,7 +199,7 @@ impl Rsa {
     }
 
     /// Export the current `RSA` public key to a PEM-encoded bytes vector.
-    fn export_public_key(&self) -> Result<Vec<u8>, String> {
+    pub fn export_public_key(&self) -> Result<Vec<u8>, String> {
         match self.pkey.public_key_to_pem() {
             Ok(pem) => Ok(pem),
             Err(err) => Err(err.to_string())
@@ -207,7 +207,7 @@ impl Rsa {
     }
 
     /// Export the current `RSA` private key to a PEM-encoded bytes vector.
-    fn export_private_key(&self) -> Result<Vec<u8>, String> {
+    pub fn export_private_key(&self) -> Result<Vec<u8>, String> {
         match self.pkey.private_key_to_pem() {
             Ok(pem) => Ok(pem),
             Err(err) => Err(err.to_string())

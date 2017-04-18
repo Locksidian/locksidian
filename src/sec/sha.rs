@@ -7,7 +7,7 @@ use crypto::sha2::Sha512;
 ///
 /// Hash size: 512 bits = 64 bytes = 128 chars (hexadecimal string).
 ///
-/// Example usage :
+/// Example usage:
 ///
 /// ```rust
 /// use sec::sha::sha512;
