@@ -10,7 +10,7 @@ pub fn routes() -> Router {
         // Node API
         index: any "/" => endpoints::node::node_info,
 
-        // TODO: Identity API
+        // Identity API
         identities_all: get "/identities" => endpoints::identities::get_all,
         identities_active: get "/identities/active" => endpoints::identities::get_active_identity,
         identities_hash: get "/identities/:hash" => endpoints::identities::get_identity_by_hash,

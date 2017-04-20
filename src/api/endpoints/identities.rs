@@ -16,7 +16,7 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 						.map(|entity| entity.to_identity())
 						.filter(|identity| identity.is_ok())
 						.map(|identity| identity.unwrap())
-						.map(|identity| IdentityDto::new(identity))
+						.map(|identity| IdentityDto::new(&identity))
 						.filter(|dto| dto.is_ok())
 						.map(|dto| dto.unwrap())
 						.collect();
@@ -37,7 +37,7 @@ pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 			
 			match repository.get_active() {
 				Some(entity) => match entity.to_identity() {
-					Ok(identity) => match IdentityDto::new(identity) {
+					Ok(identity) => match IdentityDto::new(&identity) {
 						Ok(dto) => response!(Ok, {"identity": dto}),
 						Err(msg) => response!(InternalServerError, {"error": msg})
 					},
@@ -58,7 +58,7 @@ pub fn get_identity_by_hash(req: &mut Request) -> IronResult<Response> {
 				
 				match repository.get(&String::from(hash)) {
 					Some(entity) => match entity.to_identity() {
-						Ok(identity) => match IdentityDto::new(identity) {
+						Ok(identity) => match IdentityDto::new(&identity) {
 							Ok(dto) => response!(Ok, {"identity": dto}),
 							Err(msg) => response!(InternalServerError, {"error": msg})
 						},

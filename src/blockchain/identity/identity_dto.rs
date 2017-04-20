@@ -14,7 +14,7 @@ pub struct IdentityDto {
 impl IdentityDto {
 	
 	/// Instantiate a new DTO from the `Identity` domain structure.
-	pub fn new(identity: Identity) -> Result<IdentityDto, String> {
+	pub fn new(identity: &Identity) -> Result<IdentityDto, String> {
 		Ok(IdentityDto {
 			hash: identity.hash(),
 			public_key: identity.public_key_to_hex()?,

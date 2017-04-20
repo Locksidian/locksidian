@@ -27,7 +27,7 @@ pub struct IdentityEntity {
 
 impl IdentityEntity {
 	
-	pub fn from_identity(identity: Identity) -> Result<IdentityEntity, String> {
+	pub fn new(identity: &Identity) -> Result<IdentityEntity, String> {
 		Ok(IdentityEntity {
 			hash: identity.hash(),
 			keypair: identity.private_key_to_hex()?,
