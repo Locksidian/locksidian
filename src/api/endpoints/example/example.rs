@@ -1,4 +1,4 @@
-//! Test endpoints exposed at `/test`
+//! Example controller exposing various endpoints.
 
 use iron::prelude::*;
 use persistence::prelude::*;

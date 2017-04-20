@@ -62,9 +62,19 @@ pub struct IdentityRepository<'pool> {
 }
 
 impl<'pool> IdentityRepository<'pool> {
+	
+	/// Instantiate a new `IdentityRepository` whose lifetime is bound to its pooled connection.
 	pub fn new(connection: &SqliteConnection) -> IdentityRepository {
 		IdentityRepository {
 			connection: connection
+		}
+	}
+	
+	/// Returns the currently active `IdentityEntity`, or `None` if none is active.
+	pub fn get_active(&self) -> Option<IdentityEntity> {
+		match identities::table.filter(identities::active.eq(true)).first(self.connection) {
+			Ok(entity) => Some(entity),
+			Err(_) => None
 		}
 	}
 }
