@@ -27,6 +27,9 @@ pub struct IdentityEntity {
 
 impl IdentityEntity {
 	
+	/// Instantiate a new `IdentityEntity` based on the given `Identity`.
+	///
+	/// The private key is PEM-encoded and stored as an hexadecimal string.
 	pub fn new(identity: &Identity) -> Result<IdentityEntity, String> {
 		Ok(IdentityEntity {
 			hash: identity.hash(),
@@ -35,6 +38,10 @@ impl IdentityEntity {
 		})
 	}
 	
+	/// This `IdentityEntity` is adapted to an `Identity` structure.
+	///
+	/// If the `hash` generated from the new `Identity` structure differs from the one stored
+	/// into this `IdentityEntity`, the `RSA` keypair may have be corrupted, resulting in an `Err`.
 	pub fn to_identity(&self) -> Result<Identity, String> {
 		match self.keypair.from_hex() {
 			Ok(key_pem) => {
@@ -52,6 +59,7 @@ impl IdentityEntity {
 		}
 	}
 	
+	/// `active` setter.
 	pub fn set_active(&mut self, active: bool) {
 		self.active = active;
 	}
@@ -70,11 +78,45 @@ impl<'pool> IdentityRepository<'pool> {
 		}
 	}
 	
-	/// Returns the currently active `IdentityEntity`, or `None` if none is active.
+	/// Return the currently active `IdentityEntity`, or `None` if none is active.
 	pub fn get_active(&self) -> Option<IdentityEntity> {
 		match identities::table.filter(identities::active.eq(true)).first(self.connection) {
 			Ok(entity) => Some(entity),
 			Err(_) => None
+		}
+	}
+	
+	/// Return all the `IdentityEntity` that are set as active.
+	pub fn get_actives(&self) -> Option<Vec<IdentityEntity>> {
+		match identities::table.filter(identities::active.eq(true)).load(self.connection) {
+			Ok(entities) => Some(entities),
+			Err(_) => None
+		}
+	}
+	
+	/// Gather all the active `IdentityEntity` that are persisted, set them as inactive and update
+	/// them. Then, persist the given `IdentityEntity` as the only active one.
+	pub fn save_as_active(&self, entity: &mut IdentityEntity) -> Result<usize, String> {
+		self.set_all_inactive();
+		entity.set_active(true);
+		
+		self.save(&entity)
+	}
+	
+	/// Update all the active `IdentityEntity` to set them to inactive.
+	fn set_all_inactive(&self) {
+		match self.get_actives() {
+			Some(mut entities) => {
+				for mut entity in entities.iter_mut() {
+					entity.set_active(false);
+					
+					match self.update(&entity) {
+						Ok(_) => (),
+						Err(_) => ()
+					}
+				}
+			}
+			None => ()
 		}
 	}
 }

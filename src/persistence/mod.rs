@@ -6,7 +6,7 @@
 //! based on the operating system the node is currently operating on, to place the `.db` file.
 //!
 //!  - Windows: `%APPDATA%\locksidian\locksidian.db`
-//!  - Linux: `/opt/locksidian/locksidian.db`
+//!  - Linux: `~/.locksidian/locksidian.db`
 //!  - Other: `./locksidian.db` (relative to the node's working directory)
 
 #[macro_use]

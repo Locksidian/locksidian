@@ -20,14 +20,12 @@ pub fn generate_new_identity(requested_key_size: String) -> Result<String, Strin
 	match requested_key_size.parse::<u32>() {
 		Ok(key_size) => {
 			let identity = Identity::generate(key_size)?;
-			let entity = IdentityEntity::new(&identity)?;
-			
-			// TODO: set as active
+			let mut entity = IdentityEntity::new(&identity)?;
 			
 			let connection = get_connection(database_path())?;
 			let repository = IdentityRepository::new(&connection);
 			
-			match repository.save(&entity) {
+			match repository.save_as_active(&mut entity) {
 				Ok(1) => Ok(identity.hash()),
 				Ok(inserted_rows) => Err(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows)),
 				Err(msg) => Err(msg)

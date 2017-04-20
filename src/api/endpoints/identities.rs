@@ -5,6 +5,22 @@ use persistence::prelude::*;
 
 use blockchain::identity::*;
 
+/// Collect all the configured node identities into a single JSON payload of the form:
+///
+/// ```json
+/// {
+/// 	"identities": [
+/// 		{
+/// 			"hash": "...",
+/// 			"public_key": "..."
+/// 		},
+/// 		...
+/// 	]
+/// }
+/// ```
+///
+/// *Note*: only the **public key** can be transferred through a DTO, in order to avoid the leak
+/// of the node's private key.
 pub fn get_all(req: &mut Request) -> IronResult<Response> {
 	match req.get_connection() {
 		Ok(connection) => {
@@ -30,6 +46,16 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 	}
 }
 
+/// Returns only the currently active `Identity` of the node.
+///
+/// ```json
+/// {
+/// 	"identity": {
+/// 		"hash": "...",
+/// 		"public_key": "..."
+/// 	}
+/// }
+/// ```
 pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 	match req.get_connection() {
 		Ok(connection) => {
@@ -50,6 +76,16 @@ pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 	}
 }
 
+/// Returns the `Identity` identified by the specified `hash`.
+///
+/// ```json
+/// {
+/// 	"identity": {
+/// 		"hash": "{hash}",
+/// 		"public_key": "..."
+/// 	}
+/// }
+/// ```
 pub fn get_identity_by_hash(req: &mut Request) -> IronResult<Response> {
 	match route_param!(req, "hash") {
 		Some(hash) => match req.get_connection() {
