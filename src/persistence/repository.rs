@@ -9,7 +9,7 @@
 pub trait QueryRepository<T, U> {
 
     /// Get a single `T` entity using its `U` primary key.
-    fn get(&self, pk: U) -> Option<T>;
+    fn get(&self, pk: &U) -> Option<T>;
 
     /// Get all the persisted `T` entities as a `Vec<T>`.
     fn get_all(&self) -> Option<Vec<T>>;
@@ -104,7 +104,7 @@ mod test {
         assert!(opt_posts.is_some());
         assert_eq!(opt_posts.unwrap().len(), 0);
 
-        let opt_post = repository.get(ENTITY_ID);
+        let opt_post = repository.get(&ENTITY_ID);
         assert!(opt_post.is_none());
 
         let count = repository.count();
@@ -120,7 +120,7 @@ mod test {
         assert!(inserted_rows.is_ok());
         assert_eq!(inserted_rows.unwrap(), 1);
 
-        let opt_post = repository.get(ENTITY_ID);
+        let opt_post = repository.get(&ENTITY_ID);
         assert!(opt_post.is_some());
 
         let count = repository.count();
@@ -137,7 +137,7 @@ mod test {
         assert!(updated_rows.is_ok());
         assert_eq!(updated_rows.unwrap(), 1);
 
-        let opt_post = repository.get(ENTITY_ID);
+        let opt_post = repository.get(&ENTITY_ID);
         assert!(opt_post.is_some());
 
         let post = opt_post.unwrap();
@@ -149,7 +149,7 @@ mod test {
         assert!(deleted_rows.is_ok());
         assert_eq!(deleted_rows.unwrap(), 1);
 
-        let opt_deleted_post = repository.get(ENTITY_ID);
+        let opt_deleted_post = repository.get(&ENTITY_ID);
         assert!(opt_deleted_post.is_none());
 
         repository.drop_table().expect("Unable to drop the testing table");

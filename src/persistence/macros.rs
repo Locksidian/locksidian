@@ -21,7 +21,7 @@
 macro_rules! crud_repository {
     ($table:ident, $entity:ty, $pk:ty, $pk_name:ident, $repository:ty) => {
         impl<'pool> QueryRepository<$entity, $pk> for $repository {
-            fn get(&self, pk: $pk) -> Option<$entity> {
+            fn get(&self, pk: &$pk) -> Option<$entity> {
                 match $table::table.filter($table::$pk_name.eq(pk)).first(self.connection) {
                     Ok(entity) => Some(entity),
                     Err(_) => None
