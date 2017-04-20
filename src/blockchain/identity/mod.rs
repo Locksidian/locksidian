@@ -6,7 +6,7 @@
 mod identity_domain;
 mod identity_dto;
 mod identity_repository;
-mod identity_cli;
+pub mod identity_cli;
 
 pub use self::identity_domain::Identity;
 pub use self::identity_dto::IdentityDto;
