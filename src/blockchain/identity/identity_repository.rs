@@ -16,41 +16,43 @@ table! {
 
 #[derive(
 	Debug, Clone,
-	Serialize, Deserialize,
 	Queryable, Insertable, AsChangeset
 )]
 #[table_name = "identities"]
-pub struct IdentityVO {
+pub struct IdentityEntity {
 	hash: String,
 	keypair: String,
 	active: bool
 }
 
-impl IdentityVO {
+impl IdentityEntity {
 	
-	fn from_identity(identity: Identity) -> Result<IdentityVO, String> {
-		Ok(IdentityVO {
+	pub fn from_identity(identity: Identity) -> Result<IdentityEntity, String> {
+		Ok(IdentityEntity {
 			hash: identity.hash(),
 			keypair: identity.private_key_to_hex()?,
 			active: false
 		})
 	}
 	
-	fn to_identity(&self) -> Result<Identity, String> {
+	pub fn to_identity(&self) -> Result<Identity, String> {
 		match self.keypair.from_hex() {
 			Ok(key_pem) => {
 				let keypair = Rsa::from_private_key(key_pem.as_slice(), "")?;
+				let identity = Identity::new(keypair)?;
 				
-				Ok(Identity {
-					hash: self.hash.clone(),
-					key: keypair
-				})
+				if self.hash == identity.hash() {
+					Ok(identity)
+				}
+				else {
+					Err(String::from("Identity hash mismatch!"))
+				}
 			},
 			Err(err) => Err(err.to_string())
 		}
 	}
 	
-	fn set_active(&mut self, active: bool) {
+	pub fn set_active(&mut self, active: bool) {
 		self.active = active;
 	}
 }
@@ -67,4 +69,4 @@ impl<'pool> IdentityRepository<'pool> {
 	}
 }
 
-crud_repository!(identities, IdentityVO, String, hash, IdentityRepository<'pool>);
+crud_repository!(identities, IdentityEntity, String, hash, IdentityRepository<'pool>);
