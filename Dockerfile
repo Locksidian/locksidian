@@ -6,13 +6,12 @@ COPY . /src
 RUN cd /src && \
     cargo build --release && \
     mkdir /app && \
-    mkdir -p /opt/locksidian && \
     cp /src/target/release/locksidian /app/locksidian && \
     chmod +x /app/locksidian && \
     rm -rf /src
 
 EXPOSE 8080
-VOLUME /opt/locksidian
+VOLUME /root/.locksidian
 
 WORKDIR /app
 

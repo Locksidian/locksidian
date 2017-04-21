@@ -8,11 +8,12 @@ use super::endpoints;
 pub fn routes() -> Router {
     router!(
         // Node API
-        index: any "/" => endpoints::info::node_info,
+        index: any "/" => endpoints::node::node_info,
 
-        // Test endpoints
-        test: post "/test" => endpoints::test::simple_add_values,
-        persisted: get "/test" => endpoints::test::persisted_add_values,
+        // Identity API
+        identities_all: get "/identities" => endpoints::identities::get_all,
+        identities_active: get "/identities/active" => endpoints::identities::get_active_identity,
+        identities_hash: get "/identities/:hash" => endpoints::identities::get_identity_by_hash,
 
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found

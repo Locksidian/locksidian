@@ -42,11 +42,26 @@
 //!     "struct": my_struct
 //! });
 //! ```
+//!
+//! # Route parameter
+//!
+//! The `route_param!` macro allows you to easily access the value of a dynamic parameter of your
+//! Iron route.
+//!
+//! Usage:
+//!
+//! ```rust
+//! match route_param!(req, "my_param") {
+//! 	Some(my_param) => ...,
+//! 	None => ...
+//! }
+//! ```
 
 macro_rules! body {
     ($req:ident) => {
         $req.get::<::bodyparser::Json>();
     };
+
     ($req:ident, $target:ty) => {
         $req.get::<::bodyparser::Struct<$target>>();
     };
@@ -66,4 +81,10 @@ macro_rules! response {
             ::serde_json::to_string(&$payload)
         )))
     };
+}
+
+macro_rules! route_param {
+	($req:ident, $param:tt) => {
+		$req.extensions.get::<::router::Router>().unwrap().find($param);
+	}
 }

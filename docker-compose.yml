@@ -3,6 +3,8 @@ services:
   locksidian:
     build: .
     volumes:
-      - .:/opt/locksidian
+      - .:/root/.locksidian/
     ports:
-      - 8080:8080
+      - "8080:8080"
+    working_dir: /app
+    command: /app/locksidian -d 0.0.0.0:8080

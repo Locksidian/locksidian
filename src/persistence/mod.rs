@@ -6,7 +6,7 @@
 //! based on the operating system the node is currently operating on, to place the `.db` file.
 //!
 //!  - Windows: `%APPDATA%\locksidian\locksidian.db`
-//!  - Linux: `/opt/locksidian/locksidian.db`
+//!  - Linux: `~/.locksidian/locksidian.db`
 //!  - Other: `./locksidian.db` (relative to the node's working directory)
 
 #[macro_use]
@@ -20,11 +20,6 @@ use std::fs;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
-#[cfg(target_os = "linux")]
-pub fn database_path() -> String {
-    String::from("/opt/locksidian/locksidian.db")
-}
-
 #[cfg(target_os = "windows")]
 pub fn database_path() -> String {
     match ::opts::env("APPDATA") {
@@ -34,11 +29,13 @@ pub fn database_path() -> String {
 }
 
 #[cfg(not(any(
-    target_os = "windows",
-    target_os = "linux"
+    target_os = "windows"
 )))]
 pub fn database_path() -> String {
-    String::from("locksidian.db")
+    match ::opts::env("HOME") {
+        Some(home) => format!("{}/.locksidian/locksidian.db", home),
+        None => String::from("locksidian.db")
+    }
 }
 
 /// Method used to establish a connection to the persistence context of the application, based on
@@ -66,12 +63,11 @@ pub fn check_database_path(path: &Path) {
 /// Execute the setup script at startup in order to initialize the database schemas.
 pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
     match connection.execute(r#"
-        CREATE TABLE IF NOT EXISTS `values` (
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT  NOT NULL,
-            `value` INTEGER DEFAULT 0
+        CREATE TABLE IF NOT EXISTS `identities` (
+            `hash` TEXT PRIMARY KEY NOT NULL,
+            `keypair` BLOB NOT NULL,
+            `active` BOOLEAN DEFAULT FALSE
         );
-
-        INSERT INTO `values` (`value`) VALUES (1);
     "#) {
         Ok(_) => Ok(()),
         Err(err) => Err(err.to_string())

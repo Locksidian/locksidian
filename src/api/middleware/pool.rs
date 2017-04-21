@@ -30,7 +30,6 @@ impl typemap::Key for PoolMiddleware {
 }
 
 impl PoolMiddleware {
-
     /// Connection pool configuration using a custom `Config` builder.
     pub fn new(database_path: String) -> Result<PoolMiddleware, String> {
         check_database_path(database_path.as_ref());

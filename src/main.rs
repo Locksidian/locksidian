@@ -364,13 +364,18 @@
 // Third-party dependencies
 extern crate getopts;
 extern crate time;
+
+extern crate openssl;
 extern crate crypto;
+extern crate rustc_serialize;
 
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
+
+extern crate hyper;
 
 #[macro_use(router)]
 extern crate router;
@@ -395,6 +400,16 @@ mod cli;
 mod persistence;
 mod api;
 
+mod blockchain;
+
+use std::process::exit;
+
+/// Process executed successfully
+const EXIT_SUCCESS: i32 = 0;
+
+/// An error occured during runtime which caused the process to stop
+const EXIT_FAILURE: i32 = -1;
+
 /// Package name
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
 /// Current version
@@ -406,6 +421,20 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.
 fn main() {
-    let matches = opts::init();
-    cli::handle(matches);
+    match opts::init() {
+        Ok(matches) => match cli::handle(matches) {
+            Ok(success) => {
+                println!("{}", success);
+                exit(EXIT_SUCCESS);
+            },
+            Err(msg) => {
+                println!("{}", msg);
+                exit(EXIT_FAILURE);
+            }
+        },
+        Err(msg) => {
+            println!("{}\n\n{}", msg, opts::usage());
+            exit(EXIT_FAILURE);
+        }
+    }
 }

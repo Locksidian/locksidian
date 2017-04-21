@@ -8,7 +8,7 @@
 Pure [Rust](https://www.rust-lang.org/) implementation of the
 [blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)) technology.
 
-Full project documentation can be found here : https://locksidian.gitlab.io/locksidian/locksidian
+Full project documentation can be found here : http://locksidian.fries.io/
 
 ## Installation
 
@@ -40,22 +40,40 @@ the [Locksidian GitLab Page](https://locksidian.gitlab.io/locksidian/locksidian)
 
 ## Contributing
 
-### Project setup
+### Project setup: Windows
 
-In order to contribute to the project, you first have to follow these brief setup instructions:
+ - Install [msys2](http://www.msys2.org/);
+ - **Optional**: Create a cross-integration between your `msys2` environment and your "native" Windows environment by
+   defining the following Windows environment variables:
+   
+```bash
+MSYS2_PATH_TYPE=inherit     # Your Windows PATH will be appended to your msys2 PATH
+MSYS2_HOME=C:\msys64        # Replace with your custom install path
 
- - Use the `nightly` rust toolchain : `rustup default nightly`.
- - If you are running Windows, the `gcc-rs` dependency requires that you set the `CC=gcc` environment variable in
-    order to work properly.
- - If you are running an older 32 bits version of MinGW as your C toolchain, you will have to use the **i686** rust
-   toolchain : `rustup default stable-i686-pc-windows-gnu`. You might want to upgrade to `MinGW-w64` using [Win-builds](http://win-builds.org)
-   to continue using the 64 bits rust distribution. Don't forget to update your `default-host` in order to use the GNU
-   toolchain: `rustup set default-host x86_64-pc-windows-gnu`.
- - Install `lisqslite3` (Windows: https://www.sqlite.org/download.html , Debian package: `apt-get install libsqlite3-dev`).
-   Note: if the `-lsqlite3` flag is not recognized during compile time, try to copy all the `libsqlite.*` files into the
-   `lib` folder of your current Rust toolchain:
-   `<home>/.rustup/toolchains/nightly-x86_64-pc-windows-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib`
-   (this problem was only encountered on the Windows platform).
+# Append to your Windows PATH in order to use msys2 executables from CMD/PowerShell:
+# ;%MSYS2_HOME%\mingw64\bin;%MSYS2_HOME%\usr\bin
+```
+
+ - Install the `Rust` development environment and the `Locksidian` dependencies:
+
+```bash
+# Update distro
+pacman -Syu
+
+# Install Locksidian dependencies
+pacman -Sy mingw-w64-x86_64-gcc \
+           mingw-w64-x86_64-pkg-config \
+           mingw-w64-x86_64-openssl \
+           mingw-w64-x86_64-sqlite3 \
+           curl
+           
+# Install Rust
+curl -sSf https://sh.rustup.rs/ | sh -s -- --default-toolchain nightly --default-host x86_64-pc-windows-gnu -y
+```
+
+ - *Note*: if the `-lsqlite3` flag is not recognized at compile time, try to copy all the `<msys2>/mingw64/lib/libsqlite.*`
+    files into the `lib` folder of your current Rust toolchain:
+    `<home>/.rustup/toolchains/nightly-x86_64-pc-windows-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib`
                                                                               
 ### Commit guidelines
 

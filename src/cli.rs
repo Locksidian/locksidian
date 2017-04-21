@@ -1,43 +1,62 @@
 //! Command Line Interface.
 //!
-//! Handle the command line arguments provided by the `opts` module and the environment variable
+//! Handle the command line arguments provided by the `opts` module and the environment variables
 //! defined in the system/Docker container.
 
 use getopts::Matches;
-
 use opts;
-use api;
-use persistence::*;
 
-pub fn handle(matches: Matches) {
+use api;
+use blockchain::identity;
+
+pub fn handle(matches: Matches) -> Result<String, String> {
+	// Generic options
     if matches.opt_present("help") {
-        println!("{}", opts::usage());
+        Ok(opts::usage())
     }
     else if matches.opt_present("version") {
-        println!("{}", opts::version());
+        Ok(opts::version())
     }
+	// API
     else if matches.opt_present("daemon") {
-        daemon(matches.opt_str("daemon"));
+        match matches.opt_str("daemon") {
+            Some(addr) => api::cli::start_daemon(addr),
+            None => Err(opts::usage())
+        }
     }
     else if opts::env("LS_DAEMON").is_some() {
-        daemon(opts::env("LS_DAEMON"));
+        match opts::env("LS_DAEMON") {
+            Some(addr) => api::cli::start_daemon(addr),
+            None => Err(opts::usage())
+        }
     }
+	// Identitiy
+    else if matches.opt_present("identity") {
+        match matches.opt_str("identity") {
+            Some(hash) => identity::cli::set_active_identity(hash),
+            None => Err(opts::usage())
+        }
+    }
+	else if matches.opt_present("identity-new") {
+		match matches.opt_str("identity-new") {
+			Some(bit_size) => identity::cli::generate_new_identity(bit_size),
+			None => Err(opts::usage())
+		}
+	}
+    else if matches.opt_present("identity-import") {
+        match matches.opt_str("identity-import") {
+            Some(path) => identity::cli::import_identity_from_pem_file(path),
+            None => Err(opts::usage())
+        }
+    }
+    else if matches.opt_present("identity-export") {
+        match matches.opt_str("identity-export") {
+            Some(hash) => identity::cli::export_identity(hash),
+            None => Err(opts::usage())
+        }
+    }
+	// Unknown option
     else {
-        println!("{}", opts::usage());
-    }
-}
-
-fn daemon(opt_addr: Option<String>) {
-    match opt_addr {
-        Some(listen_addr) => {
-            match get_connection(database_path()) {
-                Ok(connection) => setup_database(&connection).expect("Unable to initialize the database schemas"),
-                Err(msg) => panic!(msg)
-            }
-
-            let server = api::Server::new(listen_addr);
-            server.start(api::router());
-        },
-        None => println!("{}", opts::usage())
+        Err(opts::usage())
     }
 }
