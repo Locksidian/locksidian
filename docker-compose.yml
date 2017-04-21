@@ -1,8 +1,10 @@
 version: "2"
 services:
-  test:
-    image: registry.gitlab.com/locksidian/locksidian-ci:master
+  locksidian:
+    build: .
     volumes:
-      - .:/src
-    working_dir: /src
-    command: cargo test
+      - .:/root/.locksidian/
+    ports:
+      - "8080:8080"
+    working_dir: /app
+    command: /app/locksidian -d 0.0.0.0:8080

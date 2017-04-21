@@ -1,4 +1,5 @@
-# IntelliJ IDEA
+# IDE
+.vscode/
 .idea/
 locksidian.iml
 

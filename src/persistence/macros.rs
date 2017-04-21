@@ -21,7 +21,7 @@
 macro_rules! crud_repository {
     ($table:ident, $entity:ty, $pk:ty, $pk_name:ident, $repository:ty) => {
         impl<'pool> QueryRepository<$entity, $pk> for $repository {
-            fn get(&self, pk: $pk) -> Option<$entity> {
+            fn get(&self, pk: &$pk) -> Option<$entity> {
                 match $table::table.filter($table::$pk_name.eq(pk)).first(self.connection) {
                     Ok(entity) => Some(entity),
                     Err(_) => None
@@ -52,14 +52,14 @@ macro_rules! crud_repository {
             }
 
             fn update(&self, entity: &$entity) -> Result<usize, String> {
-                match ::diesel::update($table::table.find(entity.$pk_name)).set(entity).execute(self.connection) {
+                match ::diesel::update($table::table.find(&entity.$pk_name)).set(entity).execute(self.connection) {
                     Ok(updated_rows) => Ok(updated_rows),
                     Err(err) => Err(err.to_string())
                 }
             }
 
             fn delete(&self, entity: &$entity) -> Result<usize, String> {
-                match ::diesel::delete($table::table.filter($table::$pk_name.eq(entity.$pk_name))).execute(self.connection) {
+                match ::diesel::delete($table::table.filter($table::$pk_name.eq(&entity.$pk_name))).execute(self.connection) {
                     Ok(deleted_rows) => Ok(deleted_rows),
                     Err(err) => Err(err.to_string())
                 }
