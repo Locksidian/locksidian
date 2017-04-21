@@ -63,6 +63,11 @@ impl IdentityEntity {
 	pub fn set_active(&mut self, active: bool) {
 		self.active = active;
 	}
+
+	/// `keypair` getter.
+	pub fn keypair(&self) -> String {
+		self.keypair.clone()
+	}
 }
 
 pub struct IdentityRepository<'pool> {

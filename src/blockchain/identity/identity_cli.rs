@@ -1,6 +1,7 @@
 //! Identity Command Line Interface.
 
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 use persistence::prelude::*;
 use blockchain::identity::*;
@@ -40,7 +41,14 @@ fn import_identity_from_pem_file() {
 	unimplemented!()
 }
 
-// TODO
-fn export_identity() {
-	unimplemented!()
+/// Export the PEM-encoded hexadecimal string representing the private key of the specified
+/// `Identity`.
+pub fn export_identity(hash: String) -> Result<String, String> {
+	let connection = get_connection(database_path())?;
+	let repository = IdentityRepository::new(&connection);
+
+	match repository.get(&hash) {
+		Some(entity) => Ok(entity.keypair()),
+		None => Err(format!("The specified identity does not exists: {}", hash)),
+	}
 }
