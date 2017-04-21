@@ -31,6 +31,12 @@ pub fn handle(matches: Matches) -> Result<String, String> {
         }
     }
 	// Identitiy
+    else if matches.opt_present("identity") {
+        match matches.opt_str("identity") {
+            Some(hash) => identity::cli::set_active_identity(hash),
+            None => Err(opts::usage())
+        }
+    }
 	else if matches.opt_present("identity-new") {
 		match matches.opt_str("identity-new") {
 			Some(bit_size) => identity::cli::generate_new_identity(bit_size),

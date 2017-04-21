@@ -107,6 +107,15 @@ impl<'pool> IdentityRepository<'pool> {
 		
 		self.save(&entity)
 	}
+
+	/// Gather all the active `IdentityEntity` that are persisted, set them as inactive and update
+	/// them. Then, update the given `IdentityEntity` as the only active one.
+	pub fn update_as_active(&self, entity: &mut IdentityEntity) -> Result<usize, String> {
+		self.set_all_inactive();
+		entity.set_active(true);
+		
+		self.update(&entity)
+	}
 	
 	/// Update all the active `IdentityEntity` to set them to inactive.
 	fn set_all_inactive(&self) {

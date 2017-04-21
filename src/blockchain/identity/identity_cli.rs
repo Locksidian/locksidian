@@ -6,9 +6,19 @@
 use persistence::prelude::*;
 use blockchain::identity::*;
 
-// TODO
-fn set_active_identity() {
-	unimplemented!()
+/// Define the `Identity` identified by the provided `hash` as the only active one.
+pub fn set_active_identity(hash: String) -> Result<String, String> {
+	let connection = get_connection(database_path())?;
+	let repository = IdentityRepository::new(&connection);
+
+	match repository.get(&hash) {
+		Some(mut entity) => match repository.update_as_active(&mut entity) {
+			Ok(1) => Ok(hash),
+			Ok(updated_rows) => Err(format!("An unexpected number of rows were updated in the registry. Expected: 1. Got: {}.", updated_rows)),
+			Err(msg) => Err(msg)
+		},
+		None => Err(format!("An unknown identity hash was provided: {}", hash))
+	}
 }
 
 /// Generate a new `Identity` and set it as active.
