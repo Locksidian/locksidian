@@ -43,6 +43,12 @@ pub fn handle(matches: Matches) -> Result<String, String> {
 			None => Err(opts::usage())
 		}
 	}
+    else if matches.opt_present("identity-import") {
+        match matches.opt_str("identity-import") {
+            Some(path) => identity::cli::import_identity_from_pem_file(path),
+            None => Err(opts::usage())
+        }
+    }
     else if matches.opt_present("identity-export") {
         match matches.opt_str("identity-export") {
             Some(hash) => identity::cli::export_identity(hash),

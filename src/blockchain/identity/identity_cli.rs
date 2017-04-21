@@ -3,10 +3,13 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use sec::rsa::Rsa;
+use sec::hex::*;
+
 use persistence::prelude::*;
 use blockchain::identity::*;
 
-/// Define the `Identity` identified by the provided `hash` as the only active one.
+/// Define the `Identity` identified by the provided `hash` as the currently active one.
 pub fn set_active_identity(hash: String) -> Result<String, String> {
 	let connection = get_connection(database_path())?;
 	let repository = IdentityRepository::new(&connection);
@@ -46,9 +49,34 @@ pub fn generate_new_identity(requested_key_size: String) -> Result<String, Strin
 	}
 }
 
-// TODO
-fn import_identity_from_pem_file() {
-	unimplemented!()
+/// Import the content of the specified file as a PEM-encoded hexadecimal string.
+///
+/// An `RSA` keypair and an `Identity` structure will be created from its content.
+///
+/// If this `Identity` already exists, an error is thrown. Otherwise, the new identity is stored
+/// in the local registry and set as inactive.
+///
+/// You have to explicitly call `locksidian --identity {hash}` to set an imported `Identity` as active.
+pub fn import_identity_from_pem_file(path: String) -> Result<String, String> {
+	let connection = get_connection(database_path())?;
+	let repository = IdentityRepository::new(&connection);
+
+	let private_pem = hex_file_to_bytes(path)?;
+	let key = Rsa::from_private_key(private_pem.as_slice(), "")?;
+	let identity = Identity::new(key)?;
+
+	match repository.get(&identity.hash()) {
+		Some(_) => Err(format!("This identity is already configured on this node: {}", identity.hash())),
+		None => {
+			let entity = IdentityEntity::new(&identity)?;
+
+			match repository.save(&entity) {
+				Ok(1) => Ok(identity.hash()),
+				Ok(inserted_rows) => Err(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows)),
+				Err(msg) => Err(msg)
+			}
+		}
+	}	
 }
 
 /// Export the PEM-encoded hexadecimal string representing the private key of the specified
