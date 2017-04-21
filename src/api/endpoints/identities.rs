@@ -59,17 +59,12 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 	match req.get_connection() {
 		Ok(connection) => {
-			let repository = IdentityRepository::new(&*connection);
-			
-			match repository.get_active() {
-				Some(entity) => match entity.to_identity() {
-					Ok(identity) => match IdentityDto::new(&identity) {
-						Ok(dto) => response!(Ok, {"identity": dto}),
-						Err(msg) => response!(InternalServerError, {"error": msg})
-					},
+			match cli::get_active_identity(&*connection) {
+				Ok(identity) => match IdentityDto::new(&identity) {
+					Ok(dto) => response!(Ok, {"identity": dto}),
 					Err(msg) => response!(InternalServerError, {"error": msg})
 				},
-				None => response!(NoContent, {})
+				Err(_) => response!(NoContent, {})
 			}
 		},
 		Err(msg) => response!(InternalServerError, {"error": msg})

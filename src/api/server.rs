@@ -7,8 +7,10 @@ use iron::prelude::*;
 use iron::Handler;
 use iron::Listening;
 
-use persistence::*;
+use persistence::prelude::*;
 use api::middleware::*;
+
+use blockchain::identity::*;
 
 /// HTTP server exposing the `Locksidian` REST API.
 pub struct Server {
@@ -48,16 +50,34 @@ impl Server {
         match status {
             Ok(mut listener) => {
                 println!("Locksidian daemon listening on: {}", self.listen_addr);
-                self.on_start(&mut listener)
+				
+                match self.on_start() {
+					Ok(_) => Ok(String::from("Daemon initialization successful!")),
+					Err(msg) => {
+						self.stop(&mut listener)?;
+						Err(msg)
+					}
+				}
             },
             Err(err) => Err(err.to_string())
         }
     }
 
     /// Callback method called when the `Locksidian` server starts.
-    fn on_start(&self, listener: &mut Listening) -> Result<String, String> {
-        // TODO: check if there is an active Identity; stop the server if this is not the case.
-        self.stop(listener)
+    fn on_start(&self) -> Result<(), String> {
+		let connection = self.setup_database()?;
+		
+		let identity = cli::get_active_identity(&connection)?;
+		println!("Startup identity is: {}", identity.hash());
+		
+		Ok(())
+    }
+    
+    fn setup_database(&self) -> Result<SqliteConnection, String> {
+        let connection = get_connection(database_path())?;
+        setup_database(&connection)?;
+		
+		Ok(connection)
     }
 
     /// Gracefully stops the running `Listening` instance.

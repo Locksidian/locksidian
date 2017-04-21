@@ -1,13 +1,20 @@
 //! Identity Command Line Interface.
 
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 use sec::rsa::Rsa;
 use sec::hex::*;
 
 use persistence::prelude::*;
 use blockchain::identity::*;
+
+/// Return the currently active `Identity`
+pub fn get_active_identity(connection: &SqliteConnection) -> Result<Identity, String> {
+	let repository = IdentityRepository::new(&connection);
+	
+	match repository.get_active() {
+		Some(entity) => entity.to_identity(),
+		None => Err(String::from("Locksidian node cannot operate without an active identity!"))
+	}
+}
 
 /// Define the `Identity` identified by the provided `hash` as the currently active one.
 pub fn set_active_identity(hash: String) -> Result<String, String> {
