@@ -5,9 +5,10 @@
 
 use iron::prelude::*;
 use iron::Handler;
+use iron::Listening;
 
+use persistence::*;
 use api::middleware::*;
-use persistence::database_path;
 
 /// HTTP server exposing the `Locksidian` REST API.
 pub struct Server {
@@ -28,27 +29,42 @@ impl Server {
 
     /// Configure the middlewares wrapping every routes.
     /// Used to add new behavior before, around and after each requests/responses.
-    fn chain<H: Handler>(&self, handler: H) -> Chain {
+    fn configure_middlewares<H: Handler>(&self, handler: H) -> Result<Chain, String> {
         let mut chain = Chain::new(handler);
 
-        chain.link_before(
-            PoolMiddleware::new(database_path()).expect("Unable to create a connection pool")
-        );
+        chain.link_before(PoolMiddleware::new(database_path())?);
         chain.link_before(ClientMiddleware::new());
         chain.link_after(HeadersMiddleware);
 
-        chain
+        Ok(chain)
     }
 
     /// Starts the API server by binding the request chain to the provided `handler` and listening
     /// on the configured address.
-    pub fn start<H: Handler>(&self, handler: H) {
-        let chain = self.chain(handler);
-        let server = Iron::new(chain).http(self.listen_addr.as_str());
+    pub fn start<H: Handler>(&self, handler: H) -> Result<String, String> {
+        let chain = self.configure_middlewares(handler)?;
+        let status = Iron::new(chain).http(self.listen_addr.as_str());
 
-        match server {
-            Ok(_) => println!("Locksidian daemon listening on: {}", self.listen_addr),
-            Err(err) => panic!(err.to_string())
+        match status {
+            Ok(mut listener) => {
+                println!("Locksidian daemon listening on: {}", self.listen_addr);
+                self.on_start(&mut listener)
+            },
+            Err(err) => Err(err.to_string())
+        }
+    }
+
+    /// Callback method called when the `Locksidian` server starts.
+    fn on_start(&self, listener: &mut Listening) -> Result<String, String> {
+        // TODO: check if there is an active Identity; stop the server if this is not the case.
+        self.stop(listener)
+    }
+
+    /// Gracefully stops the running `Listening` instance.
+    fn stop(&self, listener: &mut Listening) -> Result<String, String> {
+        match listener.close() {
+            Ok(_) => Ok(String::from("Locksidian daemon stopped gracefully")),
+            Err(err) => Err(err.to_string())
         }
     }
 }

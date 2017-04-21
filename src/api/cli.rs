@@ -9,7 +9,6 @@ pub fn start_daemon(listen_addr: String) -> Result<String, String> {
 	setup_database(&connection)?;
 	
 	let server = Server::new(listen_addr);
-	server.start(router());
-
-	Ok(String::from("API server stopped gracefully"))
+	
+	server.start(router())
 }
