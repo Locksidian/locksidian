@@ -45,7 +45,7 @@ pub fn version() -> String {
 
 pub fn usage() -> String {
     let brief = format!(
-        "{}: \"{}\" ({})\nUsage: {} [options]",
+        "{}: \"{}\"\n{}\n\nUsage: {} [options]",
         version(), ::DESCRIPTION, ::AUTHORS, ::PACKAGE
     );
 

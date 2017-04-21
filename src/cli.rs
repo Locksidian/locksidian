@@ -9,42 +9,42 @@ use opts;
 use api;
 use blockchain::identity;
 
-pub fn handle(matches: Matches) {
+pub fn handle(matches: Matches) -> Result<String, String> {
 	// Generic options
     if matches.opt_present("help") {
-        println!("{}", opts::usage());
+        Ok(opts::usage())
     }
     else if matches.opt_present("version") {
-        println!("{}", opts::version());
+        Ok(opts::version())
     }
 	// API
     else if matches.opt_present("daemon") {
-        api::cli::start_daemon(matches.opt_str("daemon"));
+        match matches.opt_str("daemon") {
+            Some(addr) => api::cli::start_daemon(addr),
+            None => Err(opts::usage())
+        }
     }
     else if opts::env("LS_DAEMON").is_some() {
-        api::cli::start_daemon(opts::env("LS_DAEMON"));
+        match opts::env("LS_DAEMON") {
+            Some(addr) => api::cli::start_daemon(addr),
+            None => Err(opts::usage())
+        }
     }
 	// Identitiy
 	else if matches.opt_present("identity-new") {
 		match matches.opt_str("identity-new") {
-			Some(bit_size) => match identity::cli::generate_new_identity(bit_size) {
-				Ok(hash) => println!("{}", hash),
-				Err(msg) => println!("[-] {}", msg)
-			},
-			None => println!("{}", opts::usage())
+			Some(bit_size) => identity::cli::generate_new_identity(bit_size),
+			None => Err(opts::usage())
 		}
 	}
     else if matches.opt_present("identity-export") {
         match matches.opt_str("identity-export") {
-            Some(hash) => match identity::cli::export_identity(hash) {
-                Ok(private_pem) => println!("{}", private_pem),
-                Err(msg) => println!("[-] {}", msg)
-            },
-            None => println!("{}", opts::usage())
+            Some(hash) => identity::cli::export_identity(hash),
+            None => Err(opts::usage())
         }
     }
 	// Unknown option
     else {
-        println!("{}", opts::usage());
+        Err(opts::usage())
     }
 }

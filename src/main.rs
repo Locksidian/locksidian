@@ -391,7 +391,6 @@ extern crate diesel_codegen;
 extern crate r2d2;
 extern crate r2d2_diesel;
 
-
 // Project modules
 mod opts;
 pub mod sec;
@@ -402,6 +401,14 @@ mod persistence;
 mod api;
 
 mod blockchain;
+
+use std::process::exit;
+
+/// Process executed successfully
+const EXIT_SUCCESS: i32 = 0;
+
+/// An error occured during runtime which caused the process to stop
+const EXIT_FAILURE: i32 = -1;
 
 /// Package name
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
@@ -415,7 +422,19 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 /// Locksidian entry point.
 fn main() {
     match opts::init() {
-        Ok(matches) => cli::handle(matches),
-        Err(msg) => println!("{}\n\n{}", msg, opts::usage())
+        Ok(matches) => match cli::handle(matches) {
+            Ok(success) => {
+                println!("{}", success);
+                exit(EXIT_SUCCESS);
+            },
+            Err(msg) => {
+                println!("{}", msg);
+                exit(EXIT_FAILURE);
+            }
+        },
+        Err(msg) => {
+            println!("{}\n\n{}", msg, opts::usage());
+            exit(EXIT_FAILURE);
+        }
     }
 }
