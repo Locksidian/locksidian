@@ -81,6 +81,27 @@ impl<'pool> BlockRepository<'pool> {
             connection: connection
         }
     }
+
+    /// Select a `BlockEntity` using its `data_hash` rather than its `hash` primary key.
+    ///
+    /// Method used when crawling the blockchain for an existing document.
+    fn get_by_data_hash(&self, data_hash: String) -> Option<BlockEntity> {
+        match blocks::table.filter(blocks::data_hash.eq(data_hash)).first(self.connection) {
+            Ok(entity) => Some(entity),
+            Err(_) => None
+        }
+    }
+
+    /// Select the `BlockEntity` with the greater `height` value.
+    ///
+    /// TODO: Select the `BlockEntity` with the greater `height` value and having its `previous` block linked back to it through its `next` column,
+    /// in order to avoid conflicts if a fork were to occur.
+    fn get_head(&self) -> Option<BlockEntity> {
+        match blocks::table.order(blocks::height.desc()).first(self.connection) {
+            Ok(entity) => Some(entity),
+            Err(_) => None
+        }
+    }
 }
 
 crud_repository!(blocks, BlockEntity, String, hash, BlockRepository<'pool>);

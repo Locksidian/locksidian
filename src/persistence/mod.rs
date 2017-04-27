@@ -81,7 +81,7 @@ pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
             `previous` TEXT NOT NULL,
 
             `height` INTEGER NOT NULL,
-            `next` TEXT DEFAULT "",
+            `next` TEXT DEFAULT "" NOT NULL,
             `author` TEXT NOT NULL,
             `received_at` INTEGER NOT NULL,
             `received_from` TEXT NOT NULL
