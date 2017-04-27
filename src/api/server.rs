@@ -10,22 +10,24 @@ use iron::Listening;
 use persistence::prelude::*;
 use api::middleware::*;
 
-use blockchain::identity::*;
+use blockchain::identity::identity_cli::get_active_identity;
 
 /// HTTP server exposing the `Locksidian` REST API.
 pub struct Server {
 
     /// Address on which the HTTP server will be listening.
     /// Use `0.0.0.0` in order to listen on any IP addresses/DNS that reaches your node.
-    listen_addr: String
+    listen_addr: String,
+    protected_mode_active: bool
 }
 
 impl Server {
 
     /// Create a new `Server` instance.
-    pub fn new(listen_addr: String) -> Server {
+    pub fn new(listen_addr: String, protected_mode_active: bool) -> Server {
         Server {
-            listen_addr: listen_addr
+            listen_addr: listen_addr,
+            protected_mode_active: protected_mode_active
         }
     }
 
@@ -35,6 +37,11 @@ impl Server {
         let mut chain = Chain::new(handler);
 
         chain.link_before(PoolMiddleware::new(database_path())?);
+
+        if self.protected_mode_active {
+            chain.link_before(ProtectedMiddleware::new());
+        }
+
         chain.link_before(ClientMiddleware::new());
         chain.link_after(HeadersMiddleware);
 
@@ -67,7 +74,7 @@ impl Server {
     fn on_start(&self) -> Result<(), String> {
 		let connection = self.setup_database()?;
 		
-		let identity = cli::get_active_identity(&connection)?;
+		let identity = get_active_identity(&connection)?;
 		println!("Startup identity is: {}", identity.hash());
 		
 		Ok(())
