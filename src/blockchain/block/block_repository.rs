@@ -48,7 +48,7 @@ pub struct BlockEntity {
 
 impl BlockEntity {
 
-    /// Instantiate a new `BlockEntity` based on the given `Block
+    /// Instantiate a new `BlockEntity` based on the given `Block`.
     pub fn new(block: &Block) -> Self {
         BlockEntity {
             data: block.data(),
@@ -65,6 +65,26 @@ impl BlockEntity {
             author: block.author(),
             received_at: block.received_at() as i32,
             received_from: block.received_from()
+        }
+    }
+
+    /// Instantiate an empty `BlockEntity`.
+    pub fn empty() -> Self {
+        BlockEntity {
+            data: String::new(),
+
+            data_hash: String::new(),
+            signature: String::new(),
+            timestamp: 0,
+            nonce: 0,
+            previous: String::new(),
+
+            hash: String::new(),
+            height: 0,
+            next: String::new(),
+            author: String::new(),
+            received_at: 0,
+            received_from: String::new()
         }
     }
 }
@@ -85,7 +105,7 @@ impl<'pool> BlockRepository<'pool> {
     /// Select a `BlockEntity` using its `data_hash` rather than its `hash` primary key.
     ///
     /// Method used when crawling the blockchain for an existing document.
-    fn get_by_data_hash(&self, data_hash: String) -> Option<BlockEntity> {
+    pub fn get_by_data_hash(&self, data_hash: &str) -> Option<BlockEntity> {
         match blocks::table.filter(blocks::data_hash.eq(data_hash)).first(self.connection) {
             Ok(entity) => Some(entity),
             Err(_) => None
@@ -96,11 +116,26 @@ impl<'pool> BlockRepository<'pool> {
     ///
     /// TODO: Select the `BlockEntity` with the greater `height` value and having its `previous` block linked back to it through its `next` column,
     /// in order to avoid conflicts if a fork were to occur.
-    fn get_head(&self) -> Option<BlockEntity> {
+    pub fn get_head(&self) -> Option<BlockEntity> {
         match blocks::table.order(blocks::height.desc()).first(self.connection) {
             Ok(entity) => Some(entity),
             Err(_) => None
         }
+    }
+
+    /// Update the current `HEAD` block to set its `next` column to the `hash` value of a new, persisted, `HEAD` block.
+    pub fn save_head(&self, entity: &BlockEntity) -> Result<usize, String> {
+        match self.get_head() {
+            Some(mut head) => {
+                if head.next.is_empty() {
+					head.next = entity.hash.clone();
+					self.update(&head)?;
+				}
+            },
+            None => ()
+        };
+
+        self.save(&entity)
     }
 }
 

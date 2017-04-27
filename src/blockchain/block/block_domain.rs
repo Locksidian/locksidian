@@ -4,11 +4,14 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+use num::pow::checked_pow as pow;
+use num_bigint::{BigUint, ToBigUint};
+
 use sec::sha::sha512;
-use sec::hex::FromHex;
+use sec::hex::*;
 
 use blockchain::identity::Identity;
-use blockchain::block::BlockEntity;
+use blockchain::block::{ProofOfWork, BlockEntity, BlockRepository};
 
 pub struct Block {
 	// Block data
@@ -31,6 +34,61 @@ pub struct Block {
 }
 
 impl Block {
+	
+	/// Instantiate a new `Block` containing an arbitrary JSON document.
+	pub fn new(data: String, author: &Identity, repository: &BlockRepository) -> Result<Self, String> {
+		// Block creation timestamp
+		let timestamp = Block::get_current_timestamp();
+		let received_at = Block::get_current_timestamp();
+		
+		// Compute data hash and browse the blockchain in order to find a possible duplicate
+		let data_hash = sha512(data.as_bytes());
+
+		match repository.get_by_data_hash(&data_hash) {
+			Some(entity) => Err(format!("Document hash {} is already stored in block {}", data_hash, entity.hash)),
+			None => {
+				let received_from = author.hash();
+				let block_author = author.hash();
+				let signature = author.key().sign(data.as_bytes())?;
+
+				let head = repository.get_head().unwrap_or(BlockEntity::empty());
+				
+				// Create a partial `Block` structure used to calculate the PoW algorithm
+				let mut block = Block {
+					data: data,
+					
+					data_hash: data_hash,
+					signature: signature,
+					timestamp: timestamp,
+					nonce: 0,
+					previous: head.hash,
+					
+					hash: String::new(),
+					height: (head.height + 1) as u64,
+					next: String::new(),
+					author: block_author,
+					received_at: received_at,
+					received_from: received_from
+				};
+
+				let (hash, nonce) = Block::compute(&block)?;
+				block.nonce = nonce;
+				block.hash = hash;
+
+				// Return our complete `Block` structure
+				Ok(block)
+			}
+		}
+	}
+	
+	/// Return the current timestamp as an `u64`.
+	fn get_current_timestamp() -> u64 {
+		let current_time = ::time::get_time();
+		let milliseconds = (current_time.sec as u64 * 1000) +
+			(current_time.nsec as u64 / 1000 / 1000);
+		
+		milliseconds
+	}
 
 	/// Adapt a `BlockEntity` into a `Block` structure, consuming its instance.
 	pub fn from_entity(entity: BlockEntity) -> Result<Self, String> {
@@ -53,43 +111,6 @@ impl Block {
 			}),
 			Err(err) => Err(err.to_string())
 		}
-	}
-	
-	/// Instantiate a new `Block` containing an arbitrary JSON document.
-	pub fn new(data: String, author: &Identity) -> Result<Self, String> {
-		let received_at = Block::get_current_timestamp();
-		let received_from = author.hash();
-		let block_author = author.hash();
-		
-		let data_hash = sha512(data.as_bytes());
-		let signature = author.key().sign(data.as_bytes())?;
-		let timestamp = Block::get_current_timestamp();
-		
-		Ok(Block {
-			data: data,
-			
-			data_hash: data_hash,
-			signature: signature,
-			timestamp: timestamp,
-			nonce: 0,
-			previous: String::from(""),
-			
-			hash: String::from(""),
-			height: 0,
-			next: String::from(""),
-			author: block_author,
-			received_at: 0,
-			received_from: received_from
-		})
-	}
-	
-	/// Return the current timestamp as an `u64`.
-	fn get_current_timestamp() -> u64 {
-		let current_time = ::time::get_time();
-		let milliseconds = (current_time.sec as u64 * 1000) +
-			(current_time.nsec as u64 / 1000 / 1000);
-		
-		milliseconds
 	}
 
 	/// `data` getter.
@@ -150,6 +171,58 @@ impl Block {
 	/// `received_from` getter.
 	pub fn received_from(&self) -> String {
 		self.received_from.clone()
+	}
+}
+
+impl ProofOfWork<Block> for Block {
+
+	/// Calculate the Proof of Work difficulty for the given `Block`.
+	fn difficulty(block: &Block) -> Result<usize, String> {
+		let base = 512;
+		let divider = 32;
+
+		let difficulty = base - block.data().len() / divider;
+
+		Ok(difficulty)
+	}
+
+	/// Compute the `Block` nonce using the proof of work algorithm.
+	fn compute(block: &Block) -> Result<(String, u32), String> {
+		let base = 2;
+
+		match base.to_biguint() {
+			Some(base) => {
+				let difficulty = Block::difficulty(&block)?;
+
+				match pow(base, difficulty) {
+					Some(pow_target) => {
+						let mut nonce = 0;
+
+						let data_hash = block.data_hash();
+						let signature = block.signature().to_hex();
+						let previous = block.previous();
+
+						loop {
+							let pow_buffer = format!("{}{}{}{}{}", data_hash, signature, block.timestamp(), nonce, previous);
+							let pow_hash = sha512(pow_buffer.as_bytes());
+							
+							match BigUint::parse_bytes(pow_hash.as_bytes(), 16) {
+								Some(pow_value) => {
+									if pow_value < pow_target {
+										return Ok((pow_hash, nonce))
+									}
+
+									nonce += 1;
+								},
+								None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", pow_hash))
+							}
+						};
+					},
+					None => Err(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty))
+				}
+			},
+			None => Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", base))
+		}
 	}
 }
 

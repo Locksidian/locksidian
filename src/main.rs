@@ -365,6 +365,9 @@
 extern crate getopts;
 extern crate time;
 
+extern crate num;
+extern crate num_bigint;
+
 extern crate openssl;
 extern crate crypto;
 extern crate rustc_serialize;
@@ -408,7 +411,7 @@ use std::process::exit;
 const EXIT_SUCCESS: i32 = 0;
 
 /// An error occured during runtime which caused the process to stop
-const EXIT_FAILURE: i32 = -1;
+const EXIT_FAILURE: i32 = 1;
 
 /// Package name
 const PACKAGE: &'static str = env!("CARGO_PKG_NAME");
