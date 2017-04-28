@@ -1,6 +1,4 @@
-//! Block computation algorithms.
-//!
-//! `ProofOfWork` trait definition and various `Block` algorithms.
+//! `ProofOfWork` trait definition.
 
 pub trait ProofOfWork {
     fn difficulty(&self) -> Result<usize, String>;

@@ -6,8 +6,9 @@ use num_bigint::{BigUint, ToBigUint};
 use sec::sha::sha512;
 use sec::hex::*;
 
+use blockchain::algorithm::ProofOfWork;
 use blockchain::identity::Identity;
-use blockchain::block::{ProofOfWork, BlockEntity, BlockRepository};
+use blockchain::block::{BlockEntity, BlockRepository};
 
 pub struct Block {
 	// Block data
