@@ -80,8 +80,7 @@ impl Block {
 	/// Return the current timestamp as an `u64`.
 	fn get_current_timestamp() -> u64 {
 		let current_time = ::time::get_time();
-		let milliseconds = (current_time.sec as u64 * 1000) +
-			(current_time.nsec as u64 / 1000 / 1000);
+		let milliseconds = current_time.sec as u64;
 		
 		milliseconds
 	}
