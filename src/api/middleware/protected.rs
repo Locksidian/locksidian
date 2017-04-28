@@ -21,11 +21,9 @@ use sec::sha::sha512;
 use sec::rsa::Rsa;
 use iron::status::Status::Forbidden;
 
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{self, Debug};
-
-static ENDPOINTS_FILTER: &'static [&'static str] = &["/blocks"];
-
 
 #[derive(Debug)]
 struct StringError(String);
@@ -41,14 +39,22 @@ impl Error for StringError {
 }
 
 pub struct ProtectedMiddleware {
-
+    endpoints_filter: HashMap<&'static str, Vec<&'static str>>
 }
 
 impl ProtectedMiddleware {
     pub fn new() -> ProtectedMiddleware {
-        ProtectedMiddleware {
+        let mut endpoints_filter = HashMap::new();
 
+        ProtectedMiddleware::init(&mut endpoints_filter);
+
+        ProtectedMiddleware {
+            endpoints_filter: endpoints_filter
         }
+    }
+
+    fn init(endpoints_filter : &mut HashMap<&'static str, Vec<&'static str>>) {
+        endpoints_filter.insert("/blocks", vec!["POST"]);
     }
 
     fn process_request(&self, req: &mut Request) -> IronResult<()>{
@@ -59,11 +65,25 @@ impl ProtectedMiddleware {
     }
 
     fn is_protected_route(&self, req: &mut Request) -> bool {
+        let referer: String = self.get_referer(req);
+        let method: &str = req.method.as_ref();
+
+        self.is_method_protected(referer.as_str(), method)
+    }
+
+    fn is_method_protected(&self, referer: &str, method: &str) -> bool {
+        match self.endpoints_filter.get(&referer) {
+            Some(methods) => methods.contains(&method),
+            None => false
+        }
+    }
+
+    fn get_referer(&self, req: &mut Request) -> String{
         let mut referer: String = String::from("/");
         let path: String = req.url.path().join("/");
         referer.push_str(&path);
 
-        ENDPOINTS_FILTER.contains(&&referer[..])
+        referer
     }
 
     fn get_identity(&self, req: &mut Request) -> Result<Identity, String> {
@@ -77,11 +97,9 @@ impl ProtectedMiddleware {
         let hash_raw = self.get_body_hash(req)?;
         let signature_raw = self.get_header(req, "X-LS-SIGNATURE")?;
         let identity_raw = self.get_identity(req)?;
-        let hash : &[u8] = hash_raw.as_bytes();
-        let signature : &[u8] = signature_raw.as_slice();
         let key : &Rsa = identity_raw.key();
 
-        key.verify_signature(hash, signature)
+        key.verify_signature(hash_raw.as_bytes(), signature_raw.as_slice())
     }
 
     fn get_header(&self, req: &mut Request, name : &str) -> Result<Vec<u8>, String> {
