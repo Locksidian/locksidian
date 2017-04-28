@@ -10,3 +10,4 @@ pub use self::algorithms::ProofOfWork;
 
 pub use self::block_domain::Block;
 pub use self::block_repository::{BlockEntity, BlockRepository};
+pub use self::block_dto::{BlockDto, BlockReplicationDto};
