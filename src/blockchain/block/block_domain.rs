@@ -1,9 +1,5 @@
 //! Block domain structure.
 
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
 use num::pow::checked_pow as pow;
 use num_bigint::{BigUint, ToBigUint};
 
@@ -71,7 +67,7 @@ impl Block {
 					received_from: received_from
 				};
 
-				let (hash, nonce) = Block::compute(&block)?;
+				let (hash, nonce) = block.compute()?;
 				block.nonce = nonce;
 				block.hash = hash;
 
@@ -174,36 +170,36 @@ impl Block {
 	}
 }
 
-impl ProofOfWork<Block> for Block {
+impl ProofOfWork for Block {
 
 	/// Calculate the Proof of Work difficulty for the given `Block`.
-	fn difficulty(block: &Block) -> Result<usize, String> {
+	fn difficulty(&self) -> Result<usize, String> {
 		let base = 512;
 		let divider = 32;
 
-		let difficulty = base - block.data().len() / divider;
+		let difficulty = base - self.data().len() / divider;
 
 		Ok(difficulty)
 	}
 
 	/// Compute the `Block` nonce using the proof of work algorithm.
-	fn compute(block: &Block) -> Result<(String, u32), String> {
+	fn compute(&self) -> Result<(String, u32), String> {
 		let base = 2;
 
 		match base.to_biguint() {
 			Some(base) => {
-				let difficulty = Block::difficulty(&block)?;
+				let difficulty = self.difficulty()?;
 
 				match pow(base, difficulty) {
 					Some(pow_target) => {
 						let mut nonce = 0;
 
-						let data_hash = block.data_hash();
-						let signature = block.signature().to_hex();
-						let previous = block.previous();
+						let data_hash = self.data_hash();
+						let signature = self.signature().to_hex();
+						let previous = self.previous();
 
 						loop {
-							let pow_buffer = format!("{}{}{}{}{}", data_hash, signature, block.timestamp(), nonce, previous);
+							let pow_buffer = format!("{}{}{}{}{}", data_hash, signature, self.timestamp(), nonce, previous);
 							let pow_hash = sha512(pow_buffer.as_bytes());
 							
 							match BigUint::parse_bytes(pow_hash.as_bytes(), 16) {
@@ -224,11 +220,4 @@ impl ProofOfWork<Block> for Block {
 			None => Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", base))
 		}
 	}
-}
-
-#[cfg(test)]
-mod test {
-	use super::*;
-	
-	
 }
