@@ -1,15 +1,16 @@
 //! HTTP protected middleware.
 //!
-//! `BeforeMiddleware` used to :
+//! `BeforeMiddleware` used to:
 //!
-//! - Check if URL is protected
-//! - Get the current identity
-//! - Check if X-LS-SIGNATURE header is present and has hexa data
-//! - Get sha512 request body hash checksum
-//! - Compare request body hash with X-LS-SIGNATURE header
+//! - Check if URL is protected under specified method;
+//! - Get the current identity;
+//! - Check if X-LS-SIGNATURE header is present and has hexadecimal data;
+//! - Get sha512 request body hash checksum;
+//! - Compare request body hash with X-LS-SIGNATURE header and verfiy signature.
 //!
-//! Sends 403 error if protection blocked the request
-//! Gives access to the requested page if request is authorized
+//! Sends 403 error if protection blocked the request.
+//!
+//! Gives access to the requested page if request is authorized.
 
 use iron::prelude::*;
 use iron::BeforeMiddleware;
@@ -57,7 +58,7 @@ impl ProtectedMiddleware {
         endpoints_filter.insert("/blocks", vec!["POST"]);
     }
 
-    fn process_request(&self, req: &mut Request) -> IronResult<()>{
+    fn process_request(&self, req: &mut Request) -> IronResult<()> {
         match self.check_signature(req) {
             Ok(_) => Ok(()),
             Err(_) => Err(IronError::new(StringError("Forbidden".to_string()), Forbidden))
@@ -78,7 +79,7 @@ impl ProtectedMiddleware {
         }
     }
 
-    fn get_referer(&self, req: &mut Request) -> String{
+    fn get_referer(&self, req: &mut Request) -> String {
         let mut referer: String = String::from("/");
         let path: String = req.url.path().join("/");
         referer.push_str(&path);
@@ -93,11 +94,10 @@ impl ProtectedMiddleware {
     }
 
     fn check_signature(&self, req: &mut Request) -> Result<bool, String> {
-
         let hash_raw = self.get_body_hash(req)?;
         let signature_raw = self.get_header(req, "X-LS-SIGNATURE")?;
         let identity_raw = self.get_identity(req)?;
-        let key : &Rsa = identity_raw.key();
+        let key: &Rsa = identity_raw.key();
 
         key.verify_signature(hash_raw.as_bytes(), signature_raw.as_slice())
     }
@@ -134,13 +134,9 @@ impl ProtectedMiddleware {
 
 impl BeforeMiddleware for ProtectedMiddleware {
     fn before(&self, req: &mut Request) -> IronResult<()> {
-        println!("Protection middleware active");
-        if self.is_protected_route(req) {
-            println!("Route is protected");
-            self.process_request(req)
-        }
-        else {
-            Ok(())
+        match self.is_protected_route(req) {
+            true => self.process_request(req),
+            false => Ok(())
         }
     }
 }

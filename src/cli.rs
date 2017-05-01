@@ -10,11 +10,6 @@ use api;
 use blockchain::identity;
 
 pub fn handle(matches: Matches) -> Result<String, String> {
-    let mut protected_mode_active : bool = false;
-    if matches.opt_present("protected") {
-        protected_mode_active = true;
-    }
-
 	// Generic options
     if matches.opt_present("help") {
         Ok(opts::usage())
@@ -25,13 +20,13 @@ pub fn handle(matches: Matches) -> Result<String, String> {
 	// API
     else if matches.opt_present("daemon") {
         match matches.opt_str("daemon") {
-            Some(addr) => api::cli::start_daemon(addr, protected_mode_active),
+            Some(addr) => api::cli::start_daemon(addr, matches.opt_present("protected")),
             None => Err(opts::usage())
         }
     }
     else if opts::env("LS_DAEMON").is_some() {
         match opts::env("LS_DAEMON") {
-            Some(addr) => api::cli::start_daemon(addr, protected_mode_active),
+            Some(addr) => api::cli::start_daemon(addr, matches.opt_present("protected")),
             None => Err(opts::usage())
         }
     }

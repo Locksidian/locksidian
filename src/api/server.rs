@@ -18,6 +18,8 @@ pub struct Server {
     /// Address on which the HTTP server will be listening.
     /// Use `0.0.0.0` in order to listen on any IP addresses/DNS that reaches your node.
     listen_addr: String,
+
+    /// Is the protected mode activated for this `Server` instance?
     protected_mode_active: bool
 }
 
