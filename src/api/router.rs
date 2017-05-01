@@ -15,6 +15,11 @@ pub fn routes() -> Router {
         identities_active: get "/identities/active" => endpoints::identities::get_active_identity,
         identities_hash: get "/identities/:hash" => endpoints::identities::get_identity_by_hash,
 
+        // Block API
+        show_head: get "/blocks" => endpoints::blocks::show_head,
+        store_document: post "/blocks" => endpoints::blocks::store_document,
+        get_block: get "/blocks/:hash" => endpoints::blocks::get_block,
+
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found
     )

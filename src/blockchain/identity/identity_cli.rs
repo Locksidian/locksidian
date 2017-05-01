@@ -46,6 +46,7 @@ pub fn generate_new_identity(requested_key_size: String) -> Result<String, Strin
 			let connection = get_connection(database_path())?;
 			let repository = IdentityRepository::new(&connection);
 			
+			//TODO: save as inactive
 			match repository.save_as_active(&mut entity) {
 				Ok(1) => Ok(identity.hash()),
 				Ok(inserted_rows) => Err(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows)),
