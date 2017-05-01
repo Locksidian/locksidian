@@ -54,7 +54,7 @@ pub fn get_connection(database_path: String) -> Result<SqliteConnection, String>
 pub fn check_database_path(path: &Path) {
     if !path.exists() {
         match path.parent() {
-            Some(parent) => fs::create_dir_all(parent).unwrap(),
+            Some(parent) => fs::create_dir_all(parent).unwrap(), //TODO: Validate this `unwrap()` usage.
             None => ()
         }
     }
@@ -67,6 +67,24 @@ pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
             `hash` TEXT PRIMARY KEY NOT NULL,
             `keypair` BLOB NOT NULL,
             `active` BOOLEAN DEFAULT FALSE
+        );
+
+        CREATE TABLE IF NOT EXISTS `blocks` (
+            `hash` TEXT PRIMARY KEY NOT NULL,
+
+            `data` TEXT NOT NULL,
+
+            `data_hash` TEXT NOT NULL,
+            `signature` TEXT NOT NULL,
+            `timestamp` INTEGER NOT NULL,
+            `nonce` INTEGER NOT NULL,
+            `previous` TEXT NOT NULL,
+
+            `height` INTEGER NOT NULL,
+            `next` TEXT DEFAULT "" NOT NULL,
+            `author` TEXT NOT NULL,
+            `received_at` INTEGER NOT NULL,
+            `received_from` TEXT NOT NULL
         );
     "#) {
         Ok(_) => Ok(()),

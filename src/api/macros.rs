@@ -67,6 +67,12 @@ macro_rules! body {
     };
 }
 
+macro_rules! body_raw {
+    ($req:ident) => {
+        $req.get::<::bodyparser::Raw>();
+    };
+}
+
 macro_rules! response {
     ($status:ident, $payload:tt) => {
         Ok(::iron::Response::with((

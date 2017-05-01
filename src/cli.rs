@@ -20,17 +20,17 @@ pub fn handle(matches: Matches) -> Result<String, String> {
 	// API
     else if matches.opt_present("daemon") {
         match matches.opt_str("daemon") {
-            Some(addr) => api::cli::start_daemon(addr),
+            Some(addr) => api::cli::start_daemon(addr, matches.opt_present("protected")),
             None => Err(opts::usage())
         }
     }
     else if opts::env("LS_DAEMON").is_some() {
         match opts::env("LS_DAEMON") {
-            Some(addr) => api::cli::start_daemon(addr),
+            Some(addr) => api::cli::start_daemon(addr, matches.opt_present("protected")),
             None => Err(opts::usage())
         }
     }
-	// Identitiy
+	// Identity
     else if matches.opt_present("identity") {
         match matches.opt_str("identity") {
             Some(hash) => identity::cli::set_active_identity(hash),
