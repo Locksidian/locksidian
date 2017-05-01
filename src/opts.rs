@@ -11,6 +11,7 @@ fn build_opts() -> Options {
     opts.optflag("v", "version", "output version information and exit");
     
     opts.optopt("d", "daemon", "starts the Locksidian daemon service and HTTP REST API", "LISTEN_ADDR");
+    opts.optflag("p", "protected", "starts the Locksidian daemon in protected mode. Only available when running with --daemon");
     
     opts.optopt("i", "identity", "switch the active node identity", "IDENTITY_HASH");
     opts.optopt("", "identity-new", "generate a new identity (defaults to 4096 bit RSA keypair)", "BIT_SIZE");
