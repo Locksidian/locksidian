@@ -182,42 +182,43 @@ impl ProofOfWork for Block {
 		Ok(difficulty)
 	}
 
-	/// Compute the `Block` nonce using the proof of work algorithm.
-	fn compute(&self) -> Result<(String, u32), String> {
+	fn target(&self, difficulty: usize) -> Result<BigUint, String> {
 		let base = 2;
 
 		match base.to_biguint() {
-			Some(base) => {
-				let difficulty = self.difficulty()?;
-
-				match pow(base, difficulty) {
-					Some(pow_target) => {
-						let mut nonce = 0;
-
-						let data_hash = self.data_hash();
-						let signature = self.signature().to_hex();
-						let previous = self.previous();
-
-						loop {
-							let pow_buffer = format!("{}{}{}{}{}", data_hash, signature, self.timestamp(), nonce, previous);
-							let pow_hash = sha512(pow_buffer.as_bytes());
-							
-							match BigUint::parse_bytes(pow_hash.as_bytes(), 16) {
-								Some(pow_value) => {
-									if pow_value < pow_target {
-										return Ok((pow_hash, nonce))
-									}
-
-									nonce += 1;
-								},
-								None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", pow_hash))
-							}
-						};
-					},
-					None => Err(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty))
-				}
+			Some(base) => match pow(base, difficulty) {
+				Some(target) => Ok(target),
+				None => Err(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty))
 			},
 			None => Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", base))
 		}
+	}
+
+	/// Compute the `Block` nonce using the proof of work algorithm.
+	fn compute(&self) -> Result<(String, u32), String> {
+		let difficulty = self.difficulty()?;
+		let target = self.target(difficulty)?;
+
+		let mut nonce = 0;
+
+		let data_hash = self.data_hash();
+		let signature = self.signature().to_hex();
+		let previous = self.previous();
+
+		loop {
+			let pow_buffer = format!("{}{}{}{}{}", data_hash, signature, self.timestamp(), nonce, previous);
+			let pow_hash = sha512(pow_buffer.as_bytes());
+			
+			match BigUint::parse_bytes(pow_hash.as_bytes(), 16) {
+				Some(pow_value) => {
+					if pow_value < target {
+						return Ok((pow_hash, nonce))
+					}
+
+					nonce += 1;
+				},
+				None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", pow_hash))
+			}
+		};
 	}
 }
