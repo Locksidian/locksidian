@@ -182,42 +182,125 @@ impl ProofOfWork for Block {
 		Ok(difficulty)
 	}
 
-	/// Compute the `Block` nonce using the proof of work algorithm.
-	fn compute(&self) -> Result<(String, u32), String> {
+	/// Calculate the Proof of Work target based on the given `difficulty` factor.
+	fn target(&self, difficulty: usize) -> Result<BigUint, String> {
 		let base = 2;
 
 		match base.to_biguint() {
-			Some(base) => {
-				let difficulty = self.difficulty()?;
-
-				match pow(base, difficulty) {
-					Some(pow_target) => {
-						let mut nonce = 0;
-
-						let data_hash = self.data_hash();
-						let signature = self.signature().to_hex();
-						let previous = self.previous();
-
-						loop {
-							let pow_buffer = format!("{}{}{}{}{}", data_hash, signature, self.timestamp(), nonce, previous);
-							let pow_hash = sha512(pow_buffer.as_bytes());
-							
-							match BigUint::parse_bytes(pow_hash.as_bytes(), 16) {
-								Some(pow_value) => {
-									if pow_value < pow_target {
-										return Ok((pow_hash, nonce))
-									}
-
-									nonce += 1;
-								},
-								None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", pow_hash))
-							}
-						};
-					},
-					None => Err(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty))
-				}
+			Some(base) => match pow(base, difficulty) {
+				Some(target) => Ok(target),
+				None => Err(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty))
 			},
 			None => Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", base))
 		}
+	}
+
+	/// Compute the `Block` nonce using the proof of work algorithm.
+	fn compute(&self) -> Result<(String, u32), String> {
+		let difficulty = self.difficulty()?;
+		let target = self.target(difficulty)?;
+		let signature = self.signature().to_hex();
+
+		let mut nonce = 0;
+
+		loop {
+			let pow_buffer = format!("{}{}{}{}{}", self.data_hash, signature, self.timestamp(), nonce, self.previous);
+			let pow_hash = sha512(pow_buffer.as_bytes());
+			
+			match BigUint::parse_bytes(pow_hash.as_bytes(), 16) {
+				Some(pow_value) => {
+					if pow_value < target {
+						return Ok((pow_hash, nonce))
+					}
+
+					nonce += 1;
+				},
+				None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", pow_hash))
+			}
+		};
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::*;
+
+	fn mock_block_data(data: &str) -> Block {
+		Block {
+            data: String::from(data),
+
+            data_hash: String::new(),
+            signature: vec![],
+            timestamp: 0,
+            nonce: 0,
+            previous: String::new(),
+
+            hash: String::new(),
+            height: 0,
+            next: String::new(),
+            author: String::new(),
+            received_at: 0,
+            received_from: String::new()
+        }
+	}
+
+	#[test]
+	fn difficulty_should_be_equal_to_512() {
+		let block = mock_block_data(r#"{"Hello": "World!"}"#);
+		let difficulty = block.difficulty().unwrap();
+
+		assert_eq!(512, difficulty);
+	}
+
+	#[test]
+	fn difficulty_should_be_equal_to_508() {
+		let block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."}"#);
+		let difficulty = block.difficulty().unwrap();
+
+		assert_eq!(508, difficulty);
+	}
+
+	#[test]
+	fn difficulty_should_be_equal_to_498() {
+		let block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
+		let difficulty = block.difficulty().unwrap();
+
+		assert_eq!(498, difficulty);
+	}
+
+	#[test]
+	fn should_compute_the_target_for_a_difficulty_of_512() {
+		let block = mock_block_data(r#"{"Hello": "World!"}"#);
+		let difficulty = block.difficulty().unwrap();
+		let target = block.target(difficulty).unwrap();
+
+		assert_eq!("100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", format!("{:x}", target));
+	}
+
+	#[test]
+	fn should_compute_the_target_for_a_difficulty_of_498() {
+		let block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
+		let difficulty = block.difficulty().unwrap();
+		let target = block.target(difficulty).unwrap();
+
+		assert_eq!("40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", format!("{:x}", target));
+	}
+
+	#[test]
+	fn block_pow_should_compute_a_nonce_of_0() {
+		let block = mock_block_data(r#"{"Hello": "World!"}"#);
+		let (hash, nonce) = block.compute().unwrap();
+
+		assert_eq!(0, nonce);
+		assert_eq!("8ab3361c051a97ddc3c665d29f2762f8ac4240d08995f8724b6d07d8cbedd32c28f589ccdae514f20a6c8eea6f755408dd3dd6837d66932ca2352eaeab594427", hash);
+	}
+
+	#[test]
+	fn block_pow_should_compute_a_nonce_of_12623() {
+		let block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
+		let (hash, nonce) = block.compute().unwrap();
+
+		assert_eq!(12623, nonce);
+		assert_eq!("0001357cc00eaa17d81b9026372bc291fde84b7936fc8870534efbcf30f0c808b4fa1b94831b955293759dd7d9ac3166590fecefa1b0d87ad4fda9a1b45e165e", hash);
 	}
 }

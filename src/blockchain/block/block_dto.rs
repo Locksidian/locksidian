@@ -1,5 +1,7 @@
 //! Block data transfer objects.
 
+#![allow(dead_code)] // TODO: Remove this when implementing the block replication feature (see issue #19)
+
 use sec::hex::ToHex;
 
 use blockchain::block::Block;
