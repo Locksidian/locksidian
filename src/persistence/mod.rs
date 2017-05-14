@@ -86,6 +86,14 @@ pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
             `received_at` INTEGER NOT NULL,
             `received_from` TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS `peers` (
+            `identity` TEXT PRIMARY KEY NOT NULL,
+            `key` BLOB NOT NULL,
+            `address` TEXT NOT NULL,
+            `last_sent` INTEGER DEFAULT 0,
+            `last_recv` INTEGER DEFAULT 0
+        )
     "#) {
         Ok(_) => Ok(()),
         Err(err) => Err(err.to_string())
