@@ -183,6 +183,14 @@ impl Block {
 		}
 	}
 
+	fn validate_with_target(&self, target: &BigUint) -> Result<Option<(String, u32)>, String> {
+		let hash = self.calculate_hash();
+		match BigUint::parse_bytes(hash.as_bytes(), 16) {
+			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
+			None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash))
+		}
+	}
+
 }
 
 impl ProofOfWork for Block {
@@ -219,7 +227,7 @@ impl ProofOfWork for Block {
 		self.nonce = 0;
 
 		loop {
-			match self.validate(&target) {
+			match self.validate_with_target(&target) {
 				Ok(Some(result)) => return Ok(result),
 				Ok(None) => { self.nonce += 1; },
 				Err(err) => return Err(err.to_string())
@@ -227,15 +235,11 @@ impl ProofOfWork for Block {
 		};
 	}
 
-	fn validate(&self, target: &BigUint) -> Result<Option<(String, u32)>, String> {
-		let hash = self.calculate_hash();
-		match BigUint::parse_bytes(hash.as_bytes(), 16) {
-			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
-			None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash))
-		}
+	fn validate(&self) -> Result<Option<(String, u32)>, String> {
+		let difficulty = self.difficulty()?;
+		let target = self.target(difficulty)?;
+		self.validate_with_target(&target)
 	}
-
-
 }
 
 #[cfg(test)]
@@ -324,38 +328,21 @@ mod test {
 	#[test]
 	fn block_pow_should_validate_when_target_is_valid() {
 		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-		let difficulty = block.difficulty().unwrap();
-		let target = block.target(difficulty).unwrap();
 
 		block.nonce = 12623;
 
-		let result = block.validate(&target).unwrap();
+		let result = block.validate().unwrap();
 
 		assert_eq!(Some((block.calculate_hash(), block.nonce)), result);
 	}
 
 	#[test]
-	fn block_pow_should_not_validate_when_target_is_not_ok() {
-		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-		let difficulty = block.difficulty().unwrap();
-		let target = block.target(difficulty - 2).unwrap();
-
-		block.nonce = 12623;
-
-		let result = block.validate(&target).unwrap();
-
-		assert_eq!(None, result);
-	}
-
-	#[test]
 	fn block_pow_should_not_validate_when_nonce_is_not_ok() {
 		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-		let difficulty = block.difficulty().unwrap();
-		let target = block.target(difficulty).unwrap();
 
 		block.nonce = 12622;
 
-		let result = block.validate(&target).unwrap();
+		let result = block.validate().unwrap();
 
 		assert_eq!(None, result);
 	}
