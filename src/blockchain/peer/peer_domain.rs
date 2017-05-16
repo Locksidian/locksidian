@@ -1,5 +1,7 @@
 //! Peer Domain module.
 
+#![allow(dead_code)]
+
 use blockchain::peer::PeerEntity;
 
 use sec::rsa::Rsa;

@@ -1,5 +1,7 @@
 //! Peer Data Transfer Object module.
 
+#![allow(dead_code)]
+
 use blockchain::peer::Peer;
 
 #[derive(

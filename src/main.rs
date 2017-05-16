@@ -395,6 +395,7 @@ extern crate r2d2;
 extern crate r2d2_diesel;
 
 // Project modules
+mod error;
 mod opts;
 pub mod sec;
 
