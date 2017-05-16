@@ -2,6 +2,8 @@
 //!
 //! Agnostic repository pattern that can be implemented for any type of repository and/or connection.
 
+use error::LocksidianResult;
+
 /// Repository trait used to query a persisted entity.
 ///
 /// Use this trait to implement the `get` and `get_all` methods for a given entity `T` having the
@@ -15,7 +17,7 @@ pub trait QueryRepository<T, U> {
     fn get_all(&self) -> Option<Vec<T>>;
 
     /// Return the current number of persisted entities of the `T` type.
-    fn count(&self) -> Result<i64, String>;
+    fn count(&self) -> LocksidianResult<i64>;
 }
 
 /// Repository trait used to command a persisted entity.
@@ -25,19 +27,20 @@ pub trait QueryRepository<T, U> {
 pub trait CommandRepository<T> {
 
     /// Persist a new `T` entity and return the number of updated rows in the persistence context.
-    fn save(&self, entity: &T) -> Result<usize, String>;
+    fn save(&self, entity: &T) -> LocksidianResult<usize>;
 
     /// Update all the fields of an already persisted `T` entity and return the number of updated rows
     /// in the persistence context.
-    fn update(&self, entity: &T) -> Result<usize, String>;
+    fn update(&self, entity: &T) -> LocksidianResult<usize>;
 
     /// Remove the specified `T` entity from the persistence context and returns `true` if everything
     /// went right, or an error as a `String`.
-    fn delete(&self, entity: &T) -> Result<usize, String>;
+    fn delete(&self, entity: &T) -> LocksidianResult<usize>;
 }
 
 #[cfg(test)]
 mod test {
+    use error::*;
     use persistence::prelude::*;
 
     table! {
@@ -67,7 +70,7 @@ mod test {
             }
         }
 
-        fn setup_table(&self) -> Result<(), String> {
+        fn setup_table(&self) -> LocksidianResult<()> {
             match self.connection.execute(
                 r#"CREATE TABLE IF NOT EXISTS "posts" (
                     "id" INTEGER PRIMARY KEY NOT NULL,
@@ -77,14 +80,14 @@ mod test {
                 CREATE INDEX IF NOT EXISTS posts_id_index ON "posts" ("id");"#
             ) {
                 Ok(_) => Ok(()),
-                Err(err) => Err(err.to_string())
+                Err(err) => Err(LocksidianError::from_err(err))
             }
         }
 
-        fn drop_table(&self) -> Result<(), String> {
+        fn drop_table(&self) -> LocksidianResult<()> {
             match self.connection.execute(r#"DROP TABLE "posts";"#)  {
                 Ok(_) => Ok(()),
-                Err(err) => Err(err.to_string())
+                Err(err) => Err(LocksidianError::from_err(err))
             }
         }
     }

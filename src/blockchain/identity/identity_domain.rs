@@ -1,5 +1,7 @@
 //! Identity domain structure.
 
+use error::*;
+
 use sec::sha::*;
 use sec::ripemd::*;
 use sec::rsa::Rsa;
@@ -13,7 +15,7 @@ pub struct Identity {
 impl Identity {
 	
 	/// Instantiate a new `Indentity` by providing an existing key.
-	pub fn new(key: Rsa) -> Result<Identity, String> {
+	pub fn new(key: Rsa) -> LocksidianResult<Identity> {
 		Ok(Identity {
 			hash: Identity::compute_key_hash(&key)?,
 			key: key
@@ -21,14 +23,14 @@ impl Identity {
 	}
 	
 	/// Instantiate a new `Identity` by generating a new `RSA` keypair.
-	pub fn generate(key_size: u32) -> Result<Identity, String> {
+	pub fn generate(key_size: u32) -> LocksidianResult<Identity> {
 		let keypair = Rsa::generate(key_size)?;
 		
 		Identity::new(keypair)
 	}
 	
 	/// Compute the public key hash.
-	fn compute_key_hash(key: &Rsa) -> Result<String, String> {
+	fn compute_key_hash(key: &Rsa) -> LocksidianResult<String> {
 		let sha_hash = sha512(key.export_public_key()?.as_slice());
 		let hash = ripemd160(sha_hash.as_bytes());
 		
@@ -36,7 +38,7 @@ impl Identity {
 	}
 	
 	/// Export the `Identity`'s PEM-encoded private key to an hexadecimal string.
-	pub fn private_key_to_hex(&self) -> Result<String, String> {
+	pub fn private_key_to_hex(&self) -> LocksidianResult<String> {
 		let private_pem = self.key.export_private_key()?;
 		let private_hex = private_pem.to_hex();
 		
@@ -44,7 +46,7 @@ impl Identity {
 	}
 	
 	/// Export the `Identity`'s PEM-encoded public key to an hexadecimal string.
-	pub fn public_key_to_hex(&self) -> Result<String, String> {
+	pub fn public_key_to_hex(&self) -> LocksidianResult<String> {
 		let public_pem = self.key.export_public_key()?;
 		let public_hex = public_pem.to_hex();
 		

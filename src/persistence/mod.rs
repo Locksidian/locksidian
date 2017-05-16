@@ -14,6 +14,8 @@ mod macros;
 pub mod repository;
 pub mod prelude;
 
+use error::*;
+
 use std::path::Path;
 use std::fs;
 
@@ -40,12 +42,12 @@ pub fn database_path() -> String {
 
 /// Method used to establish a connection to the persistence context of the application, based on
 /// SQLite.
-pub fn get_connection(database_path: String) -> Result<SqliteConnection, String> {
+pub fn get_connection(database_path: String) -> LocksidianResult<SqliteConnection> {
     check_database_path(database_path.as_ref());
 
     match SqliteConnection::establish(database_path.as_str()) {
         Ok(connection) => Ok(connection),
-        Err(err) => Err(err.to_string())
+        Err(err) => Err(LocksidianError::from_err(err))
     }
 }
 
@@ -61,7 +63,7 @@ pub fn check_database_path(path: &Path) {
 }
 
 /// Execute the setup script at startup in order to initialize the database schemas.
-pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
+pub fn setup_database(connection: &SqliteConnection) -> LocksidianResult<()> {
     match connection.execute(r#"
         CREATE TABLE IF NOT EXISTS `identities` (
             `hash` TEXT PRIMARY KEY NOT NULL,
@@ -96,7 +98,7 @@ pub fn setup_database(connection: &SqliteConnection) -> Result<(), String> {
         )
     "#) {
         Ok(_) => Ok(()),
-        Err(err) => Err(err.to_string())
+        Err(err) => Err(LocksidianError::from_err(err))
     }
 }
 
@@ -106,7 +108,7 @@ mod test {
 
     #[test]
     fn should_establish_a_connection() {
-        let connection: Result<SqliteConnection, String> = get_connection(String::from("test-persistence.db"));
+        let connection = get_connection(String::from("test-persistence.db"));
         assert!(connection.is_ok());
     }
 

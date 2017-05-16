@@ -32,7 +32,7 @@ pub struct PeerEntity {
 impl PeerEntity {
 
     /// Instantiate a new `PeerEntity` based on the provided `Peer`.
-    pub fn new(peer: &Peer) -> Result<Self, String> {
+    pub fn new(peer: &Peer) -> LocksidianResult<Self> {
         Ok(PeerEntity {
             identity: peer.identity(),
             key: peer.key_to_hex()?,

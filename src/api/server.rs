@@ -3,6 +3,8 @@
 //! Launch the server daemon using either the `--daemon={listen_addr}` command line argument or the
 //! `LS_DAEMON={listen_addr}` environment variable.
 
+use error::*;
+
 use iron::prelude::*;
 use iron::Handler;
 use iron::Listening;
@@ -35,7 +37,7 @@ impl Server {
 
     /// Configure the middlewares wrapping every routes.
     /// Used to add new behavior before, around and after each requests/responses.
-    fn configure_middlewares<H: Handler>(&self, handler: H) -> Result<Chain, String> {
+    fn configure_middlewares<H: Handler>(&self, handler: H) -> LocksidianResult<Chain> {
         let mut chain = Chain::new(handler);
 
         chain.link_before(PoolMiddleware::new(database_path())?);
@@ -52,7 +54,7 @@ impl Server {
 
     /// Starts the API server by binding the request chain to the provided `handler` and listening
     /// on the configured address.
-    pub fn start<H: Handler>(&self, handler: H) -> Result<String, String> {
+    pub fn start<H: Handler>(&self, handler: H) -> LocksidianResult<String> {
         let chain = self.configure_middlewares(handler)?;
         let status = Iron::new(chain).http(self.listen_addr.as_str());
 
@@ -62,18 +64,18 @@ impl Server {
 				
                 match self.on_start() {
 					Ok(_) => Ok(String::from("Daemon initialization successful!")),
-					Err(msg) => {
+					Err(err) => {
 						self.stop(&mut listener)?;
-						Err(msg)
+						Err(err)
 					}
 				}
             },
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 
     /// Callback method called when the `Locksidian` server starts.
-    fn on_start(&self) -> Result<(), String> {
+    fn on_start(&self) -> LocksidianResult<()> {
 		let connection = self.setup_database()?;
 		
 		let identity = get_active_identity(&connection)?;
@@ -82,7 +84,7 @@ impl Server {
 		Ok(())
     }
     
-    fn setup_database(&self) -> Result<SqliteConnection, String> {
+    fn setup_database(&self) -> LocksidianResult<SqliteConnection> {
         let connection = get_connection(database_path())?;
         setup_database(&connection)?;
 		
@@ -90,10 +92,10 @@ impl Server {
     }
 
     /// Gracefully stops the running `Listening` instance.
-    fn stop(&self, listener: &mut Listening) -> Result<String, String> {
+    fn stop(&self, listener: &mut Listening) -> LocksidianResult<String> {
         match listener.close() {
             Ok(_) => Ok(String::from("Locksidian daemon stopped gracefully")),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 }

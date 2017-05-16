@@ -65,6 +65,8 @@
 //! }
 //! ```
 
+use error::*;
+
 use openssl::rsa;
 use openssl::pkey::PKey;
 use openssl::sign::Signer;
@@ -82,19 +84,19 @@ pub struct Rsa {
 impl Rsa {
 
     /// Instantiate a new `RSA` structure from an existing `PKey`.
-    pub fn new(pkey: PKey) -> Rsa {
+    pub fn new(pkey: PKey) -> Self {
         Rsa {
             pkey: pkey
         }
     }
 
     /// Instantiate a new `RSA` structure from a public key buffer.
-    pub fn from_public_key(pem_buffer: &[u8]) -> Result<Rsa, String> {
+    pub fn from_public_key(pem_buffer: &[u8]) -> LocksidianResult<Self> {
         match PKey::public_key_from_pem(pem_buffer) {
             Ok(pkey) => Ok(Rsa {
                 pkey: pkey
             }),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 
@@ -102,7 +104,7 @@ impl Rsa {
     ///
     /// Given the private key could be secured with a passphrase, one has to be provided when calling
     /// this function.
-    pub fn from_private_key(pem_buffer: &[u8], passphrase_buffer: &str) -> Result<Rsa, String> {
+    pub fn from_private_key(pem_buffer: &[u8], passphrase_buffer: &str) -> LocksidianResult<Self> {
         match PKey::private_key_from_pem_callback(pem_buffer, |passphrase: &mut [u8]| {
             passphrase.copy_from_slice(passphrase_buffer.as_bytes());
             Ok(passphrase_buffer.len())
@@ -110,30 +112,32 @@ impl Rsa {
             Ok(pkey) => Ok(Rsa {
                 pkey: pkey
             }),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 
     /// Instantiate a new `RSA` structure by generating a new keypair of the given `size`.
-    pub fn generate(size: u32) -> Result<Rsa, String> {
-        if size % 1024 == 0 && size >= 2048 {
-            match rsa::Rsa::generate(size) {
+    pub fn generate(size: u32) -> LocksidianResult<Self> {
+        match Rsa::is_bit_size_valid(size) {
+            true => match rsa::Rsa::generate(size) {
                 Ok(rsa) => match PKey::from_rsa(rsa) {
                     Ok(pkey) => Ok(Rsa {
                         pkey: pkey
                     }),
-                    Err(pkey_err) => Err(pkey_err.to_string())
+                    Err(pkey_err) => Err(LocksidianError::from_err(pkey_err))
                 },
-                Err(rsa_err) => Err(rsa_err.to_string())
-            }
-        }
-        else {
-            Err(format!("Invalid bit size specified: {}. The keypair bit size must be a multiple of 1024 and greater or equals to 2048.", size))
+                Err(rsa_err) => Err(LocksidianError::from_err(rsa_err))
+            },
+            false => Err(LocksidianError::new(format!("Invalid bit size specified: {}. The keypair bit size must be a multiple of 1024 and greater or equals to 2048.", size)))
         }
     }
 
+    fn is_bit_size_valid(size: u32) -> bool {
+        size % 1024 == 0 && size >= 2048
+    }
+
     /// Encrypt the provided `message` slice using the RSA public key.
-    pub fn encrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn encrypt(&self, message: &[u8]) -> LocksidianResult<Vec<u8>> {
         match self.pkey.rsa() {
             Ok(rsa) => {
                 let buffer_size = rsa.size();
@@ -144,15 +148,15 @@ impl Rsa {
                         buffer.resize(length, 0);
                         Ok(buffer)
                     },
-                    Err(rsa_err) => Err(rsa_err.to_string())
+                    Err(rsa_err) => Err(LocksidianError::from_err(rsa_err))
                 }
             },
-            Err(pkey_err) => Err(pkey_err.to_string())
+            Err(pkey_err) => Err(LocksidianError::from_err(pkey_err))
         }
     }
 
     /// Decrypt the provided `message` slice using the RSA private key.
-    pub fn decrypt(&self, message: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn decrypt(&self, message: &[u8]) -> LocksidianResult<Vec<u8>> {
         match self.pkey.rsa() {
             Ok(rsa) => {
                 let buffer_size = rsa.size();
@@ -163,54 +167,54 @@ impl Rsa {
                         buffer.resize(length, 0);
                         Ok(buffer)
                     },
-                    Err(rsa_err) => Err(rsa_err.to_string())
+                    Err(rsa_err) => Err(LocksidianError::from_err(rsa_err))
                 }
             },
-            Err(pkey_err) => Err(pkey_err.to_string())
+            Err(pkey_err) => Err(LocksidianError::from_err(pkey_err))
         }
     }
 
     /// Sign the provided `message` using the RSA private key.
-    pub fn sign(&self, message: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn sign(&self, message: &[u8]) -> LocksidianResult<Vec<u8>> {
         match Signer::new(MessageDigest::sha512(), &self.pkey) {
             Ok(mut signer) => match signer.update(message) {
                 Ok(_) => match signer.finish() {
                     Ok(signed_message) => Ok(signed_message),
-                    Err(finish_err) => Err(finish_err.to_string())
+                    Err(finish_err) => Err(LocksidianError::from_err(finish_err))
                 },
-                Err(update_err) => Err(update_err.to_string())
+                Err(update_err) => Err(LocksidianError::from_err(update_err))
             },
-            Err(signer_err) => Err(signer_err.to_string())
+            Err(signer_err) => Err(LocksidianError::from_err(signer_err))
         }
     }
 
     /// Verify that the provided `message` was signed using this RSA keypair.
-    pub fn verify_signature(&self, message: &[u8], signature: &[u8]) -> Result<bool, String> {
+    pub fn verify_signature(&self, message: &[u8], signature: &[u8]) -> LocksidianResult<bool> {
         match Verifier::new(MessageDigest::sha512(), &self.pkey) {
             Ok(mut verifier) => match verifier.update(message) {
                 Ok(_) => match verifier.finish(signature) {
                     Ok(is_verified) => Ok(is_verified),
-                    Err(finish_err) => Err(finish_err.to_string())
+                    Err(finish_err) => Err(LocksidianError::from_err(finish_err))
                 },
-                Err(update_err) => Err(update_err.to_string())
+                Err(update_err) => Err(LocksidianError::from_err(update_err))
             },
-            Err(verifier_err) => Err(verifier_err.to_string())
+            Err(verifier_err) => Err(LocksidianError::from_err(verifier_err))
         }
     }
 
     /// Export the current `RSA` public key to a PEM-encoded bytes vector.
-    pub fn export_public_key(&self) -> Result<Vec<u8>, String> {
+    pub fn export_public_key(&self) -> LocksidianResult<Vec<u8>> {
         match self.pkey.public_key_to_pem() {
             Ok(pem) => Ok(pem),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 
     /// Export the current `RSA` private key to a PEM-encoded bytes vector.
-    pub fn export_private_key(&self) -> Result<Vec<u8>, String> {
+    pub fn export_private_key(&self) -> LocksidianResult<Vec<u8>> {
         match self.pkey.private_key_to_pem() {
             Ok(pem) => Ok(pem),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 }

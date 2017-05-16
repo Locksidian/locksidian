@@ -397,7 +397,7 @@ extern crate r2d2_diesel;
 // Project modules
 mod error;
 mod opts;
-pub mod sec;
+mod sec;
 
 mod cli;
 #[macro_use]
@@ -406,6 +406,7 @@ mod api;
 
 mod blockchain;
 
+use error::*;
 use std::process::exit;
 
 /// Process executed successfully
@@ -431,13 +432,13 @@ fn main() {
                 println!("{}", success);
                 exit(EXIT_SUCCESS);
             },
-            Err(msg) => {
-                println!("{}", msg);
+            Err(err) => {
+                println!("{}", err.description());
                 exit(EXIT_FAILURE);
             }
         },
-        Err(msg) => {
-            println!("{}\n\n{}", msg, opts::usage());
+        Err(err) => {
+            println!("{}\n\n{}", err.description(), opts::usage());
             exit(EXIT_FAILURE);
         }
     }

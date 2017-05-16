@@ -35,33 +35,33 @@ macro_rules! crud_repository {
                 }
             }
 
-            fn count(&self) -> Result<i64, String> {
+            fn count(&self) -> LocksidianResult<i64> {
                 match $table::table.count().first(self.connection) {
                     Ok(count) => Ok(count),
-                    Err(err) => Err(err.to_string())
+                    Err(err) => Err(LocksidianError::from_err(err))
                 }
             }
         }
 
         impl<'pool> CommandRepository<$entity> for $repository {
-            fn save(&self, entity: &$entity) -> Result<usize, String> {
+            fn save(&self, entity: &$entity) -> LocksidianResult<usize> {
                 match ::diesel::insert(entity).into($table::table).execute(self.connection) {
                     Ok(inserted_rows) => Ok(inserted_rows),
-                    Err(err) => Err(err.to_string())
+                    Err(err) => Err(LocksidianError::from_err(err))
                 }
             }
 
-            fn update(&self, entity: &$entity) -> Result<usize, String> {
+            fn update(&self, entity: &$entity) -> LocksidianResult<usize> {
                 match ::diesel::update($table::table.find(&entity.$pk_name)).set(entity).execute(self.connection) {
                     Ok(updated_rows) => Ok(updated_rows),
-                    Err(err) => Err(err.to_string())
+                    Err(err) => Err(LocksidianError::from_err(err))
                 }
             }
 
-            fn delete(&self, entity: &$entity) -> Result<usize, String> {
+            fn delete(&self, entity: &$entity) -> LocksidianResult<usize> {
                 match ::diesel::delete($table::table.filter($table::$pk_name.eq(&entity.$pk_name))).execute(self.connection) {
                     Ok(deleted_rows) => Ok(deleted_rows),
-                    Err(err) => Err(err.to_string())
+                    Err(err) => Err(LocksidianError::from_err(err))
                 }
             }
         }

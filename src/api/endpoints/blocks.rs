@@ -31,15 +31,15 @@ pub fn store_document(req: &mut Request) -> IronResult<Response> {
                                 Ok(_) => response!(InternalServerError, {
                                     "warning": "An unexpected number of rows were inserted in the registry"
                                 }),
-                                Err(msg) => response!(InternalServerError, {"error": msg})
+                                Err(err) => response!(InternalServerError, {"error": err.description()})
                             }
                         },
-                        Err(msg) => response!(Conflict, {"error": msg})
+                        Err(err) => response!(Conflict, {"error": err.description()})
                     }
                 },
-                Err(msg) => response!(InternalServerError, {"error": msg})
+                Err(err) => response!(InternalServerError, {"error": err.description()})
             },
-            Err(msg) => response!(InternalServerError, {"error": msg})
+            Err(err) => response!(InternalServerError, {"error": err.description()})
         },
         Ok(None) => response!(BadRequest, {"error": "Request body cannot be null"}),
         Err(err) => response!(InternalServerError, {"error": err.to_string()})
@@ -63,7 +63,7 @@ pub fn show_head(req: &mut Request) -> IronResult<Response> {
                 None => response!(NoContent, {})
             }
         },
-        Err(msg) => response!(InternalServerError, {"error": msg})
+        Err(err) => response!(InternalServerError, {"error": err.description()})
     }
 }
 
@@ -80,12 +80,12 @@ pub fn get_block(req: &mut Request) -> IronResult<Response> {
                             let dto = BlockDto::new(&block);
                             response!(Ok, {"block": dto})
                         },
-                        Err(msg) => response!(InternalServerError, {"error": msg})
+                        Err(err) => response!(InternalServerError, {"error": err.description()})
                     },
                     None => response!(NoContent, {})
                 }
             },
-            Err(msg) => response!(InternalServerError, {"error": msg})
+            Err(err) => response!(InternalServerError, {"error": err.description()})
         },
         None => response!(BadRequest, {"error": "Hash parameter cannot be emtpy"})
     }

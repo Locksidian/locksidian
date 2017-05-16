@@ -12,6 +12,7 @@
 //!
 //! Gives access to the requested page if request is authorized.
 
+use error::*;
 use iron::prelude::*;
 use iron::BeforeMiddleware;
 
@@ -23,21 +24,6 @@ use sec::rsa::Rsa;
 use iron::status::Status::Forbidden;
 
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt::{self, Debug};
-
-#[derive(Debug)]
-struct StringError(String);
-
-impl fmt::Display for StringError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(self, f)
-    }
-}
-
-impl Error for StringError {
-    fn description(&self) -> &str { &*self.0 }
-}
 
 pub struct ProtectedMiddleware {
     endpoints_filter: HashMap<&'static str, Vec<&'static str>>
@@ -61,7 +47,7 @@ impl ProtectedMiddleware {
     fn process_request(&self, req: &mut Request) -> IronResult<()> {
         match self.check_signature(req) {
             Ok(_) => Ok(()),
-            Err(_) => Err(IronError::new(StringError("Forbidden".to_string()), Forbidden))
+            Err(_) => Err(IronError::new(LocksidianError::new(String::from("Forbidden")), Forbidden))
         }
     }
 
@@ -87,13 +73,13 @@ impl ProtectedMiddleware {
         referer
     }
 
-    fn get_identity(&self, req: &mut Request) -> Result<Identity, String> {
+    fn get_identity(&self, req: &mut Request) -> LocksidianResult<Identity> {
         let connection = req.get_connection()?;
 
         get_active_identity(&*connection)
     }
 
-    fn check_signature(&self, req: &mut Request) -> Result<bool, String> {
+    fn check_signature(&self, req: &mut Request) -> LocksidianResult<bool> {
         let hash_raw = self.get_body_hash(req)?;
         let signature_raw = self.get_header(req, "X-LS-SIGNATURE")?;
         let identity_raw = self.get_identity(req)?;
@@ -102,31 +88,31 @@ impl ProtectedMiddleware {
         key.verify_signature(hash_raw.as_bytes(), signature_raw.as_slice())
     }
 
-    fn get_header(&self, req: &mut Request, name : &str) -> Result<Vec<u8>, String> {
+    fn get_header(&self, req: &mut Request, name : &str) -> LocksidianResult<Vec<u8>> {
         match req.headers.get_raw(name) {
             Some(header) => self.get_first_header_item(header),
-            None => Err(format!("Header \"{}\" not found", name))
+            None => Err(LocksidianError::new(format!("Header \"{}\" not found", name)))
         }
     }
 
-    fn get_first_header_item(&self, header : &[Vec<u8>]) -> Result<Vec<u8>, String> {
+    fn get_first_header_item(&self, header : &[Vec<u8>]) -> LocksidianResult<Vec<u8>> {
         match header.get(0) {
             Some(value) => Ok(value.clone()),
-            None => Err(String::from("Requested header has no content"))
+            None => Err(LocksidianError::new(String::from("Requested header has no content")))
         }
     }
 
-    fn get_body_hash(&self, req: &mut Request) -> Result<String, String> {
+    fn get_body_hash(&self, req: &mut Request) -> LocksidianResult<String> {
         match body_raw!(req) {
             Ok(body) => self.calculate_body_hash(body),
-            Err(_) => Err(String::from("Error while parsing HTTP request body as raw data"))
+            Err(_) => Err(LocksidianError::new(String::from("Error while parsing HTTP request body as raw data")))
         }
     }
 
-    fn calculate_body_hash(&self, body: Option<String>) -> Result<String, String> {
+    fn calculate_body_hash(&self, body: Option<String>) -> LocksidianResult<String> {
         match body {
             Some(data) => Ok(sha512(data.as_bytes())),
-            None => Err(String::from("No body available"))
+            None => Err(LocksidianError::new(String::from("No body available")))
         }
     }
 

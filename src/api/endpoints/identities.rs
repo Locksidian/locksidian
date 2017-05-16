@@ -42,7 +42,7 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 				None => response!(NoContent, {})
 			}
 		},
-		Err(msg) => response!(InternalServerError, {"error": msg})
+		Err(err) => response!(InternalServerError, {"error": err.description()})
 	}
 }
 
@@ -62,12 +62,12 @@ pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 			match cli::get_active_identity(&*connection) {
 				Ok(identity) => match IdentityDto::new(&identity) {
 					Ok(dto) => response!(Ok, {"identity": dto}),
-					Err(msg) => response!(InternalServerError, {"error": msg})
+					Err(err) => response!(InternalServerError, {"error": err.description()})
 				},
 				Err(_) => response!(NoContent, {})
 			}
 		},
-		Err(msg) => response!(InternalServerError, {"error": msg})
+		Err(err) => response!(InternalServerError, {"error": err.description()})
 	}
 }
 
@@ -91,14 +91,14 @@ pub fn get_identity_by_hash(req: &mut Request) -> IronResult<Response> {
 					Some(entity) => match entity.to_identity() {
 						Ok(identity) => match IdentityDto::new(&identity) {
 							Ok(dto) => response!(Ok, {"identity": dto}),
-							Err(msg) => response!(InternalServerError, {"error": msg})
+							Err(err) => response!(InternalServerError, {"error": err.description()})
 						},
-						Err(msg) => response!(InternalServerError, {"error": msg})
+						Err(err) => response!(InternalServerError, {"error": err.description()})
 					},
 					None => response!(NoContent, {})
 				}
 			},
-			Err(msg) => response!(InternalServerError, {"error": msg})
+			Err(err) => response!(InternalServerError, {"error": err.description()})
 		},
 		None => response!(BadRequest, {"error": "Hash parameter cannot be empty"})
 	}

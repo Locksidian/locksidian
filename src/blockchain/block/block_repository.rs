@@ -124,7 +124,7 @@ impl<'pool> BlockRepository<'pool> {
     }
 
     /// Update the current `HEAD` block to set its `next` column to the `hash` value of a new, persisted, `HEAD` block.
-    pub fn save_head(&self, entity: &BlockEntity) -> Result<usize, String> {
+    pub fn save_head(&self, entity: &BlockEntity) -> LocksidianResult<usize> {
         match self.get_head() {
             Some(mut head) => {
                 if head.next.is_empty() {

@@ -2,6 +2,7 @@
 
 #![allow(dead_code)]
 
+use error::*;
 use blockchain::peer::Peer;
 
 #[derive(
@@ -17,7 +18,7 @@ pub struct PeerDto {
 impl PeerDto {
 
     /// Instantiate a new `PeerDto` based on the given `Peer`.
-    pub fn new(peer: &Peer) -> Result<Self, String> {
+    pub fn new(peer: &Peer) -> LocksidianResult<Self> {
         Ok(PeerDto {
             identity: peer.identity(),
             key: peer.key_to_hex()?,
@@ -26,7 +27,7 @@ impl PeerDto {
     }
 
     /// Instantiate a new `Peer` based on this DTO instance.
-    pub fn to_peer(&self) -> Result<Peer, String> {
+    pub fn to_peer(&self) -> LocksidianResult<Peer> {
         Peer::new(self.identity.clone(), self.key.clone(), self.address.clone())
     }
 }

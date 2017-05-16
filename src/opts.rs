@@ -2,6 +2,8 @@
 //!
 //! Interact with the startup arguments using `getopts` and the environment variables.
 
+use error::*;
+
 use std::env;
 use getopts::{Options, Matches};
 
@@ -21,12 +23,12 @@ fn build_opts() -> Options {
     opts
 }
 
-pub fn init() -> Result<Matches, String> {
+pub fn init() -> LocksidianResult<Matches> {
     let args: Vec<String> = env::args().map(|arg| arg.to_string()).collect();
 
     match build_opts().parse(&args[1..]) {
         Ok(matcher) => Ok(matcher),
-        Err(err) => Err(err.to_string())
+        Err(err) => Err(LocksidianError::from_err(err))
     }
 }
 

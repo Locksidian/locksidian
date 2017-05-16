@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+use error::*;
+
 use blockchain::peer::PeerEntity;
 
 use sec::rsa::Rsa;
@@ -19,7 +21,7 @@ pub struct Peer {
 impl Peer {
 
     /// Instantiate a new `Peer` based on its identity, public key and address.
-    pub fn new(identity: String, key: String, address: String) -> Result<Self, String> {
+    pub fn new(identity: String, key: String, address: String) -> LocksidianResult<Self> {
         match key.from_hex() {
             Ok(pem) => {
                 let rsa = Rsa::from_public_key(pem.as_slice())?;
@@ -32,12 +34,12 @@ impl Peer {
                     last_recv: 0
                 })
             },
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 
     /// Instantiate a new `Peer` from the given `PeerEntity`, consuming the entity instance.
-    pub fn from_entity(entity: PeerEntity) -> Result<Self, String> {
+    pub fn from_entity(entity: PeerEntity) -> LocksidianResult<Self> {
         let mut peer = Peer::new(entity.identity, entity.key, entity.address)?;
         peer.last_sent = entity.last_sent as u64;
         peer.last_recv = entity.last_recv as u64;
@@ -55,7 +57,7 @@ impl Peer {
         &self.key
     }
 
-    pub fn key_to_hex(&self) -> Result<String, String> {
+    pub fn key_to_hex(&self) -> LocksidianResult<String> {
 		let pem = self.key.export_public_key()?;
 		let hex = pem.to_hex();
 		
