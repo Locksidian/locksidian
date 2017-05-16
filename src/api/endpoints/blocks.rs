@@ -18,7 +18,7 @@ use blockchain::block::*;
 pub fn store_document(req: &mut Request) -> IronResult<Response> {
     match body_raw!(req) {
         Ok(Some(body)) => match req.get_connection() {
-            Ok(connection) => match cli::get_active_identity(&*connection) {
+            Ok(connection) => match identity_cli::get_active_identity(&*connection) {
                 Ok(identity) => {
                     let repository = BlockRepository::new(&*connection);
                     

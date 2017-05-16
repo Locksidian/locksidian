@@ -3,11 +3,11 @@
 #![allow(dead_code)]
 
 use error::*;
-
-use blockchain::peer::PeerEntity;
-
 use sec::rsa::Rsa;
 use sec::hex::*;
+
+use blockchain::peer::PeerEntity;
+use blockchain::identity::identity_cli::compute_key_hash;
 
 pub struct Peer {
     identity: String,
@@ -21,13 +21,13 @@ pub struct Peer {
 impl Peer {
 
     /// Instantiate a new `Peer` based on its identity, public key and address.
-    pub fn new(identity: String, key: String, address: String) -> LocksidianResult<Self> {
+    pub fn new(key: String, address: String) -> LocksidianResult<Self> {
         match key.from_hex() {
             Ok(pem) => {
                 let rsa = Rsa::from_public_key(pem.as_slice())?;
 
                 Ok(Peer {
-                    identity: identity,
+                    identity: compute_key_hash(&rsa)?,
                     key: rsa,
                     address: address,
                     last_sent: 0,
@@ -40,7 +40,7 @@ impl Peer {
 
     /// Instantiate a new `Peer` from the given `PeerEntity`, consuming the entity instance.
     pub fn from_entity(entity: PeerEntity) -> LocksidianResult<Self> {
-        let mut peer = Peer::new(entity.identity, entity.key, entity.address)?;
+        let mut peer = Peer::new(entity.key, entity.address)?;
         peer.last_sent = entity.last_sent as u64;
         peer.last_recv = entity.last_recv as u64;
 

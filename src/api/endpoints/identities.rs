@@ -59,7 +59,7 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 	match req.get_connection() {
 		Ok(connection) => {
-			match cli::get_active_identity(&*connection) {
+			match identity_cli::get_active_identity(&*connection) {
 				Ok(identity) => match IdentityDto::new(&identity) {
 					Ok(dto) => response!(Ok, {"identity": dto}),
 					Err(err) => response!(InternalServerError, {"error": err.description()})

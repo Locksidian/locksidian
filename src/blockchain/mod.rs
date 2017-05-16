@@ -1,6 +1,7 @@
 //! Blockchain root module.
 
-pub mod algorithm;
+mod algorithm;
+mod network;
 
 pub mod identity;
 pub mod block;

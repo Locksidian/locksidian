@@ -2,10 +2,10 @@
 
 use error::*;
 
-use sec::sha::*;
-use sec::ripemd::*;
 use sec::rsa::Rsa;
 use sec::hex::ToHex;
+
+use super::identity_cli::compute_key_hash;
 
 pub struct Identity {
 	hash: String,
@@ -17,7 +17,7 @@ impl Identity {
 	/// Instantiate a new `Indentity` by providing an existing key.
 	pub fn new(key: Rsa) -> LocksidianResult<Identity> {
 		Ok(Identity {
-			hash: Identity::compute_key_hash(&key)?,
+			hash: compute_key_hash(&key)?,
 			key: key
 		})
 	}
@@ -27,14 +27,6 @@ impl Identity {
 		let keypair = Rsa::generate(key_size)?;
 		
 		Identity::new(keypair)
-	}
-	
-	/// Compute the public key hash.
-	fn compute_key_hash(key: &Rsa) -> LocksidianResult<String> {
-		let sha_hash = sha512(key.export_public_key()?.as_slice());
-		let hash = ripemd160(sha_hash.as_bytes());
-		
-		Ok(hash)
 	}
 	
 	/// Export the `Identity`'s PEM-encoded private key to an hexadecimal string.

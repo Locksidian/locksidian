@@ -4,6 +4,8 @@ use error::*;
 
 use sec::rsa::Rsa;
 use sec::hex::*;
+use sec::sha::sha512;
+use sec::ripemd::ripemd160;
 
 use persistence::prelude::*;
 use blockchain::identity::*;
@@ -99,4 +101,12 @@ pub fn export_identity(hash: String) -> LocksidianResult<String> {
 		Some(entity) => Ok(entity.keypair()),
 		None => Err(LocksidianError::new(format!("The specified identity does not exists: {}", hash))),
 	}
+}
+
+/// Compute the identity hash of the given `Rsa` key.
+pub fn compute_key_hash(key: &Rsa) -> LocksidianResult<String> {
+	let sha_hash = sha512(key.export_public_key()?.as_slice());
+	let hash = ripemd160(sha_hash.as_bytes());
+	
+	Ok(hash)
 }
