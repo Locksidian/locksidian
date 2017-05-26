@@ -14,8 +14,6 @@
 //! }
 //! ```
 
-use error::*;
-
 use iron::prelude::*;
 use iron::{typemap, BeforeMiddleware};
 
@@ -45,10 +43,10 @@ impl BeforeMiddleware for ClientMiddleware {
 }
 
 impl<'a, 'b> ClientExtractor for Request<'a, 'b> {
-    fn get_client(&self) -> LocksidianResult<&Arc<Client>> {
+    fn get_client(&self) -> IronResult<&Arc<Client>> {
         match self.extensions.get::<ClientMiddleware>() {
             Some(client) => Ok(client),
-            None => Err(LocksidianError::new(String::from("No HTTP client is embedded in this request")))
+            None => error!(InternalServerError, "No HTTP client is embedded in this request")
         }
     }
 }

@@ -55,13 +55,13 @@ impl BeforeMiddleware for PoolMiddleware {
 }
 
 impl<'a, 'b> PoolExtractor for Request<'a, 'b> {
-    fn get_connection(&self) -> LocksidianResult<PooledConnection> {
+    fn get_connection(&self) -> IronResult<PooledConnection> {
         match self.extensions.get::<PoolMiddleware>() {
             Some(pool) => match pool.get() {
                 Ok(connection) => Ok(connection),
-                Err(err) => Err(LocksidianError::from_err(err))
+                Err(err) => error!(InternalServerError, {"error": err.description()})
             },
-            None => Err(LocksidianError::new(String::from("No connection pool is embedded in this request")))
+            None => error!(InternalServerError, {"error": "No connection pool is embedded in this request"})
         }
     }
 }

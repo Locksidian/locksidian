@@ -8,6 +8,7 @@ use num_bigint::{BigUint, ToBigUint};
 use sec::sha::sha512;
 use sec::hex::*;
 
+use blockchain::get_current_timestamp;
 use blockchain::algorithm::ProofOfWork;
 use blockchain::identity::Identity;
 use blockchain::block::{BlockEntity, BlockRepository};
@@ -37,8 +38,8 @@ impl Block {
 	/// Instantiate a new `Block` containing an arbitrary JSON document.
 	pub fn new(data: String, author: &Identity, repository: &BlockRepository) -> LocksidianResult<Self> {
 		// Block creation timestamp
-		let timestamp = Block::get_current_timestamp();
-		let received_at = Block::get_current_timestamp();
+		let timestamp = get_current_timestamp();
+		let received_at = get_current_timestamp();
 		
 		// Compute data hash and browse the blockchain in order to find a possible duplicate
 		let data_hash = sha512(data.as_bytes());
@@ -78,14 +79,6 @@ impl Block {
 				Ok(block)
 			}
 		}
-	}
-	
-	/// Return the current timestamp as an `u64`.
-	fn get_current_timestamp() -> u64 {
-		let current_time = ::time::get_time();
-		let milliseconds = current_time.sec as u64;
-		
-		milliseconds
 	}
 
 	/// Adapt a `BlockEntity` into a `Block` structure, consuming its instance.

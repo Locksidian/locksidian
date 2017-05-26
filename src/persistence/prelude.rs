@@ -19,5 +19,5 @@ pub type ConnectionPool = Arc<Pool<ConnectionManager<SqliteConnection>>>;
 pub type PooledConnection = ::r2d2::PooledConnection<ConnectionManager<SqliteConnection>>;
 
 pub trait PoolExtractor {
-    fn get_connection(&self) -> LocksidianResult<PooledConnection>;
+    fn get_connection(&self) -> ::iron::IronResult<PooledConnection>;
 }

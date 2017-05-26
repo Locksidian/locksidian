@@ -74,8 +74,18 @@ impl Peer {
         self.last_sent
     }
 
+    /// `last_sent` setter.
+    pub fn set_last_sent(&mut self, timestamp: u64) {
+        self.last_sent = timestamp;
+    }
+
     /// `last_recv` getter.
     pub fn last_recv(&self) -> u64 {
         self.last_recv
+    }
+
+    /// `last_recv` setter.
+    pub fn set_last_recv(&mut self, timestamp: u64) {
+        self.last_recv = timestamp;
     }
 }

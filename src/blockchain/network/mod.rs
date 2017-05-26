@@ -1,6 +1,6 @@
 //! Blockchain networking module.
 
 mod p2p;
-mod client;
+mod http;
 
-pub use self::client::Client;
+pub use self::http::Client;

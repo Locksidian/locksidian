@@ -40,6 +40,7 @@ impl Server {
     fn configure_middlewares<H: Handler>(&self, handler: H) -> LocksidianResult<Chain> {
         let mut chain = Chain::new(handler);
 
+        chain.link_before(NodeMiddleware::new(self.listen_addr()));
         chain.link_before(PoolMiddleware::new(database_path())?);
 
         if self.protected_mode_active {
@@ -97,5 +98,9 @@ impl Server {
             Ok(_) => Ok(String::from("Locksidian daemon stopped gracefully")),
             Err(err) => Err(LocksidianError::from_err(err))
         }
+    }
+
+    pub fn listen_addr(&self) -> String {
+        self.listen_addr.clone()
     }
 }

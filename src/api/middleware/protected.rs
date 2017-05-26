@@ -21,7 +21,6 @@ use blockchain::identity::identity_cli::get_active_identity;
 use blockchain::identity::Identity;
 use sec::sha::sha512;
 use sec::rsa::Rsa;
-use iron::status::Status::Forbidden;
 
 use std::collections::HashMap;
 
@@ -47,7 +46,7 @@ impl ProtectedMiddleware {
     fn process_request(&self, req: &mut Request) -> IronResult<()> {
         match self.check_signature(req) {
             Ok(_) => Ok(()),
-            Err(_) => Err(IronError::new(LocksidianError::new(String::from("Forbidden")), Forbidden))
+            Err(_) => error!(Forbidden, {"error": "Forbidden"})
         }
     }
 
@@ -74,9 +73,10 @@ impl ProtectedMiddleware {
     }
 
     fn get_identity(&self, req: &mut Request) -> LocksidianResult<Identity> {
-        let connection = req.get_connection()?;
-
-        get_active_identity(&*connection)
+        match req.get_connection() {
+            Ok(connection) => get_active_identity(&*connection),
+            Err(err) => Err(LocksidianError::from_err(err))
+        }
     }
 
     fn check_signature(&self, req: &mut Request) -> LocksidianResult<bool> {

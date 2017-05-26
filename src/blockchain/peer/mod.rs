@@ -3,6 +3,7 @@
 mod peer_dto;
 mod peer_domain;
 mod peer_repository;
+pub mod peer_cli;
 
 pub use self::peer_dto::PeerDto;
 pub use self::peer_domain::Peer;

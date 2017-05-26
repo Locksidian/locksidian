@@ -5,7 +5,7 @@ use blockchain::identity::Identity;
 use blockchain::peer::Peer;
 
 /// Peer-to-Peer client trait definition.
-pub trait P2PClient {
+pub trait Client {
 
     /// Register the specified `Identity` on this Peer-to-Peer client.
     fn register(&self, identity: &Identity) -> LocksidianResult<bool>;

@@ -75,17 +75,47 @@ macro_rules! body_raw {
 
 macro_rules! response {
     ($status:ident, $payload:tt) => {
-        Ok(::iron::Response::with((
-            ::iron::status::$status,
-            json!($payload).to_string()
-        )))
+        if ::iron::status::$status == ::iron::status::Ok {
+            Ok(::iron::Response::with((
+                ::iron::status::$status,
+                json!($payload).to_string()
+            )))
+        }
+        else {
+            error!($status, $payload)
+        }
     };
 
     ($status:ident, $payload:ident) => {
-        Ok(::iron::Response::with((
-            ::iron::status::$status,
-            ::serde_json::to_string(&$payload)
-        )))
+        if ::iron::status::$status == ::iron::status::Ok {
+            Ok(::iron::Response::with((
+                ::iron::status::$status,
+                ::serde_json::to_string(&$payload)
+            )))
+        }
+        else {
+            error!($status, $payload)
+        }
+    };
+}
+
+macro_rules! error {
+    ($status:ident, $payload:tt) => {
+        Err(IronError::new(
+            ::error::LocksidianError::new(
+                json!($payload).to_string()
+            ),
+            ::iron::status::$status
+        ))
+    };
+
+    ($status:ident, $payload:ident) => {
+        Err(IronError::new(
+            ::error::LocksidianError::new(
+                ::serde_json::to_string(&$payload)
+            ),
+            ::iron::status::$status
+        ))
     };
 }
 

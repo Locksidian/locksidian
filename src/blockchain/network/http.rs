@@ -5,7 +5,7 @@
 use hyper::Client as HttpClient;
 
 use error::*;
-use blockchain::network::p2p::P2PClient;
+use blockchain::network::p2p;
 
 use blockchain::identity::Identity;
 use blockchain::peer::Peer;
@@ -20,7 +20,7 @@ impl Client {
     pub fn new(client: HttpClient, address: String) -> Self {
         Client {
             client: client,
-            address: address
+            address: format!("http://{}", address)
         }
     }
 
@@ -37,7 +37,7 @@ impl Client {
     }
 }
 
-impl P2PClient for Client {
+impl p2p::Client for Client {
     
     fn register(&self, _: &Identity) -> LocksidianResult<bool> {
         unimplemented!()
@@ -45,5 +45,16 @@ impl P2PClient for Client {
 
     fn get_peers(&self) -> LocksidianResult<Vec<Peer>> {
         unimplemented!()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn should_append_http_protocol() {
+        let client = Client::from_address(String::from("127.0.0.1"));
+        assert_eq!("http://127.0.0.1", client.address);
     }
 }
