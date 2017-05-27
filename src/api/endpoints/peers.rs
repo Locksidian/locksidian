@@ -22,7 +22,7 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 				.map(|dto| dto.unwrap())
 				.collect();
 			
-			response!(Ok, {"peers": peers})
+			response!(Ok, peers)
 		},
 		None => response!(NoContent, {})
 	}
@@ -39,7 +39,7 @@ pub fn register(req: &mut Request) -> IronResult<Response> {
             
             match peer_cli::current_identity_as_peer(&*connection, address) {
                 Ok(peer) => match PeerDto::new(&peer) {
-                    Ok(dto) => response!(Ok, {"peer": dto}),
+                    Ok(dto) => response!(Ok, dto),
                     Err(err) => response!(InternalServerError, {"error": err.description()})
                 },
                 Err(err) => response!(InternalServerError, {"error": err.description()})

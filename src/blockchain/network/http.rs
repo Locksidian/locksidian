@@ -5,6 +5,9 @@
 use error::*;
 use api::client::prelude::*;
 
+use hyper::header::{Headers, ContentType};
+use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
+
 use blockchain::network::p2p;
 use blockchain::peer::{Peer, PeerDto};
 
@@ -33,6 +36,16 @@ impl HttpClient {
     fn default_client() -> Client {
         Client::new()
     }
+	
+	fn headers(&self) -> Headers {
+		let mut headers = Headers::new();
+		headers.set(ContentType(Mime(
+			TopLevel::Application, SubLevel::Json,
+			vec![(Attr::Charset, Value::Utf8)])
+		));
+		
+		headers
+	}
 }
 
 impl p2p::Client for HttpClient {
@@ -42,7 +55,7 @@ impl p2p::Client for HttpClient {
 		let dto = PeerDto::new(&peer)?;
 		
 		match ::serde_json::to_string(&dto) {
-			Ok(json) => match self.client.post(&url).body(&json).send() {
+			Ok(json) =>  match self.client.post(&url).headers(self.headers()).body(&json).send() {
 				Ok(mut res) => match client_body!(res, PeerDto) {
 					Ok(dto) => dto.to_peer(),
 					Err(err) => Err(LocksidianError::from_err(err))
@@ -55,7 +68,7 @@ impl p2p::Client for HttpClient {
 
     fn get_peers(&self) -> LocksidianResult<Vec<Peer>> {
         let url = format!("{}/peers", self.address.clone());
-        
+		
         match self.client.get(&url).send() {
             Ok(mut res) => match client_body!(res, Vec<PeerDto>) {
 				Ok(dto) => {

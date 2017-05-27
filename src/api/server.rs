@@ -127,6 +127,8 @@ impl Server {
 				
 				self.network_registration(&client, &identity, &repository)?;
 				self.register_network_peers(&client, &repository)?;
+				
+				println!("Successfully registered onto the network.");
 			},
 			None => println!("Standalone network mode. Entrypoint is: {}", self.listen_addr)
 		}
@@ -140,12 +142,7 @@ impl Server {
 		let peer = Peer::new(key, self.listen_addr())?;
 		
 		match client.register(&peer) {
-			Ok(mut peer) => {
-				peer_cli::register(&mut peer, &repository)?;
-				println!("Successfully registered onto the network!");
-				
-				Ok(())
-			},
+			Ok(mut peer) => peer_cli::register(&mut peer, &repository),
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
