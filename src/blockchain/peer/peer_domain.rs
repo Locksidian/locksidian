@@ -39,8 +39,8 @@ impl Peer {
     }
 
     /// Instantiate a new `Peer` from the given `PeerEntity`, consuming the entity instance.
-    pub fn from_entity(entity: PeerEntity) -> LocksidianResult<Self> {
-        let mut peer = Peer::new(entity.key, entity.address)?;
+    pub fn from_entity(entity: &PeerEntity) -> LocksidianResult<Self> {
+        let mut peer = Peer::new(entity.key.clone(), entity.address.clone())?;
         peer.last_sent = entity.last_sent as u64;
         peer.last_recv = entity.last_recv as u64;
 

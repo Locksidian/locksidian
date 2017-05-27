@@ -22,6 +22,7 @@ pub fn routes() -> Router {
 
         // Peer API
         register: post "/peers/register" => endpoints::peers::register,
+        peers_all: get "/peers" => endpoints::peers::get_all,
 
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found

@@ -402,6 +402,7 @@ mod sec;
 mod cli;
 #[macro_use]
 mod persistence;
+#[macro_use]
 mod api;
 
 mod blockchain;

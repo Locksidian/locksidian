@@ -22,27 +22,23 @@ use blockchain::identity::*;
 /// *Note*: only the **public key** can be transferred through a DTO, in order to avoid the leak
 /// of the node's private key.
 pub fn get_all(req: &mut Request) -> IronResult<Response> {
-	match req.get_connection() {
-		Ok(connection) => {
-			let repository = IdentityRepository::new(&*connection);
+	let connection = req.get_connection()?;
+	let repository = IdentityRepository::new(&*connection);
+	
+	match repository.get_all() {
+		Some(entities) => {
+			let identities: Vec<IdentityDto> = entities.iter()
+				.map(|entity| entity.to_identity())
+				.filter(|identity| identity.is_ok())
+				.map(|identity| identity.unwrap())
+				.map(|identity| IdentityDto::new(&identity))
+				.filter(|dto| dto.is_ok())
+				.map(|dto| dto.unwrap())
+				.collect();
 			
-			match repository.get_all() {
-				Some(entities) => {
-					let identities: Vec<IdentityDto> = entities.iter()
-						.map(|entity| entity.to_identity())
-						.filter(|identity| identity.is_ok())
-						.map(|identity| identity.unwrap())
-						.map(|identity| IdentityDto::new(&identity))
-						.filter(|dto| dto.is_ok())
-						.map(|dto| dto.unwrap())
-						.collect();
-					
-					response!(Ok, {"identities": identities})
-				},
-				None => response!(NoContent, {})
-			}
+			response!(Ok, {"identities": identities})
 		},
-		Err(err) => response!(InternalServerError, {"error": err.description()})
+		None => response!(NoContent, {})
 	}
 }
 

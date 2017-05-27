@@ -11,8 +11,6 @@
 //! let my_struct = client_body!(res, MyStruct);
 //! ```
 
-#![allow(unused_macros)]
-
 macro_rules! client_body {
     ($res:ident, $target:ty) => {
         {

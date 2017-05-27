@@ -123,9 +123,10 @@ impl Server {
 		match self.entrypoint {
 			Some(ref entrypoint) => {
 				let client = HttpClient::from_address(entrypoint.clone());
+				let repository = PeerRepository::new(&connection);
 				
-				self.network_registration(&client, &identity)?;
-				self.register_network_peers(&client, &connection)?;
+				self.network_registration(&client, &identity, &repository)?;
+				self.register_network_peers(&client, &repository)?;
 			},
 			None => println!("Standalone network mode. Entrypoint is: {}", self.listen_addr)
 		}
@@ -134,24 +135,24 @@ impl Server {
 	}
 	
 	/// Try to establish a connection and register our instance with the network entrypoint.
-	fn network_registration<T: Client>(&self, client: &T, identity: &Identity) -> LocksidianResult<()> {
-		match client.register(&identity) {
-			Ok(true) => {
+	fn network_registration<T: Client>(&self, client: &T, identity: &Identity, repository: &PeerRepository) -> LocksidianResult<()> {
+		let key = identity.public_key_to_hex()?;
+		let peer = Peer::new(key, self.listen_addr())?;
+		
+		match client.register(&peer) {
+			Ok(mut peer) => {
+				peer_cli::register(&mut peer, &repository)?;
 				println!("Successfully registered onto the network!");
+				
 				Ok(())
 			},
-			Ok(false) => Err(LocksidianError::new(
-				String::from("Unable to establish a connection with the network entrypoint")
-			)),
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
 	
 	/// If the registration process is successfull, we gather the `Peer`s list to update our registry.
-	fn register_network_peers<T: Client>(&self, client: &T, connection: &SqliteConnection) -> LocksidianResult<()> {
+	fn register_network_peers<T: Client>(&self, client: &T, repository: &PeerRepository) -> LocksidianResult<()> {
 		let mut peers = client.get_peers()?;
-		let repository = PeerRepository::new(&connection);
-		
 		peer_cli::register_batch(&mut peers, &repository)
 	}
 

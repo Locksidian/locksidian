@@ -7,6 +7,27 @@ use api::middleware::node::NodeExtractor;
 
 use blockchain::peer::*;
 
+pub fn get_all(req: &mut Request) -> IronResult<Response> {
+	let connection = req.get_connection()?;
+	let repository = PeerRepository::new(&*connection);
+	
+	match repository.get_all() {
+		Some(entities) => {
+			let peers: Vec<PeerDto> = entities.iter()
+				.map(|entity| Peer::from_entity(entity))
+				.filter(|peer| peer.is_ok())
+				.map(|peer| peer.unwrap())
+				.map(|peer| PeerDto::new(&peer))
+				.filter(|dto| dto.is_ok())
+				.map(|dto| dto.unwrap())
+				.collect();
+			
+			response!(Ok, {"peers": peers})
+		},
+		None => response!(NoContent, {})
+	}
+}
+
 pub fn register(req: &mut Request) -> IronResult<Response> {
     let mut peer = body_to_peer(req)?;
     let connection = req.get_connection()?;

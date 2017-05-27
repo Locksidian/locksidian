@@ -2,13 +2,11 @@
 
 #![allow(dead_code)]
 
-use hyper::Client;
-
 use error::*;
-use blockchain::network::p2p;
+use api::client::prelude::*;
 
-use blockchain::identity::Identity;
-use blockchain::peer::Peer;
+use blockchain::network::p2p;
+use blockchain::peer::{Peer, PeerDto};
 
 pub struct HttpClient {
     client: Client,
@@ -39,12 +37,40 @@ impl HttpClient {
 
 impl p2p::Client for HttpClient {
     
-    fn register(&self, _: &Identity) -> LocksidianResult<bool> {
-        unimplemented!()
+    fn register(&self, peer: &Peer) -> LocksidianResult<Peer> {
+        let url = format!("{}/peers/register", self.address.clone());
+		let dto = PeerDto::new(&peer)?;
+		
+		match ::serde_json::to_string(&dto) {
+			Ok(json) => match self.client.post(&url).body(&json).send() {
+				Ok(mut res) => match client_body!(res, PeerDto) {
+					Ok(dto) => dto.to_peer(),
+					Err(err) => Err(LocksidianError::from_err(err))
+				},
+				Err(err) => Err(LocksidianError::from_err(err))
+			},
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
     }
 
     fn get_peers(&self) -> LocksidianResult<Vec<Peer>> {
-        unimplemented!()
+        let url = format!("{}/peers", self.address.clone());
+        
+        match self.client.get(&url).send() {
+            Ok(mut res) => match client_body!(res, Vec<PeerDto>) {
+				Ok(dto) => {
+					let peers: Vec<Peer> = dto.iter()
+						.map(|dto| dto.to_peer())
+						.filter(|peer| peer.is_ok())
+						.map(|peer| peer.unwrap())
+						.collect();
+					
+					Ok(peers)
+				},
+				Err(err) => Err(LocksidianError::from_err(err))
+			},
+            Err(err) => Err(LocksidianError::from_err(err))
+        }
     }
 }
 
