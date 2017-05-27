@@ -12,7 +12,11 @@ use iron::Listening;
 use persistence::prelude::*;
 use api::middleware::*;
 
+use blockchain::identity::Identity;
 use blockchain::identity::identity_cli::get_active_identity;
+
+use blockchain::network::*;
+use blockchain::peer::*;
 
 /// HTTP server exposing the `Locksidian` REST API.
 pub struct Server {
@@ -22,16 +26,20 @@ pub struct Server {
     listen_addr: String,
 
     /// Is the protected mode activated for this `Server` instance?
-    protected_mode_active: bool
+    protected: bool,
+    
+    /// Optional network entrypoint IP address or hostname
+    entrypoint: Option<String>
 }
 
 impl Server {
 
     /// Create a new `Server` instance.
-    pub fn new(listen_addr: String, protected_mode_active: bool) -> Server {
+    pub fn new(listen_addr: String, protected: bool, entrypoint: Option<String>) -> Server {
         Server {
             listen_addr: listen_addr,
-            protected_mode_active: protected_mode_active
+            protected: protected,
+			entrypoint: entrypoint
         }
     }
 
@@ -43,7 +51,7 @@ impl Server {
         chain.link_before(NodeMiddleware::new(self.listen_addr()));
         chain.link_before(PoolMiddleware::new(database_path())?);
 
-        if self.protected_mode_active {
+        if self.protected {
             chain.link_before(ProtectedMiddleware::new());
         }
 
@@ -74,32 +82,80 @@ impl Server {
             Err(err) => Err(LocksidianError::from_err(err))
         }
     }
+	
+	/// Gracefully stops the running `Listening` instance.
+	fn stop(&self, listener: &mut Listening) -> LocksidianResult<String> {
+		match listener.close() {
+			Ok(_) => Ok(String::from("Locksidian daemon stopped gracefully")),
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
 
     /// Callback method called when the `Locksidian` server starts.
     fn on_start(&self) -> LocksidianResult<()> {
 		let connection = self.setup_database()?;
+		let identity = self.setup_identity(&connection)?;
 		
-		let identity = get_active_identity(&connection)?;
-		println!("Startup identity is: {}", identity.hash());
+		self.setup_network(&connection, &identity)?;
 		
 		Ok(())
     }
     
+	/// Establish a connection to the registry and setup the database schemas.
     fn setup_database(&self) -> LocksidianResult<SqliteConnection> {
         let connection = get_connection(database_path())?;
         setup_database(&connection)?;
 		
 		Ok(connection)
     }
+	
+	/// Gather and return the currently configured `Identity`.
+	fn setup_identity(&self, connection: &SqliteConnection) -> LocksidianResult<Identity> {
+		let identity = get_active_identity(&connection)?;
+		println!("Startup identity is: {}", identity.hash());
+		
+		Ok(identity)
+	}
+	
+	/// Setup the Locksidian network by establishing a connection to the server's `entrypoint` or by
+	/// starting a new network on its own.
+	fn setup_network(&self, connection: &SqliteConnection, identity: &Identity) -> LocksidianResult<()> {
+		match self.entrypoint {
+			Some(ref entrypoint) => {
+				let client = HttpClient::from_address(entrypoint.clone());
+				
+				self.network_registration(&client, &identity)?;
+				self.register_network_peers(&client, &connection)?;
+			},
+			None => println!("Standalone network mode. Entrypoint is: {}", self.listen_addr)
+		}
+		
+		Ok(())
+	}
+	
+	/// Try to establish a connection and register our instance with the network entrypoint.
+	fn network_registration<T: Client>(&self, client: &T, identity: &Identity) -> LocksidianResult<()> {
+		match client.register(&identity) {
+			Ok(true) => {
+				println!("Successfully registered onto the network!");
+				Ok(())
+			},
+			Ok(false) => Err(LocksidianError::new(
+				String::from("Unable to establish a connection with the network entrypoint")
+			)),
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	/// If the registration process is successfull, we gather the `Peer`s list to update our registry.
+	fn register_network_peers<T: Client>(&self, client: &T, connection: &SqliteConnection) -> LocksidianResult<()> {
+		let mut peers = client.get_peers()?;
+		let repository = PeerRepository::new(&connection);
+		
+		peer_cli::register_batch(&mut peers, &repository)
+	}
 
-    /// Gracefully stops the running `Listening` instance.
-    fn stop(&self, listener: &mut Listening) -> LocksidianResult<String> {
-        match listener.close() {
-            Ok(_) => Ok(String::from("Locksidian daemon stopped gracefully")),
-            Err(err) => Err(LocksidianError::from_err(err))
-        }
-    }
-
+	/// `listen_addr` getter.
     pub fn listen_addr(&self) -> String {
         self.listen_addr.clone()
     }

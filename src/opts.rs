@@ -19,6 +19,8 @@ fn build_opts() -> Options {
     opts.optopt("", "identity-new", "generate a new identity (defaults to 4096 bit RSA keypair)", "BIT_SIZE");
     opts.optopt("", "identity-import", "import the specified PEM-encoded RSA keypair as the new active identity", "PATH_TO_PEM_FILE");
     opts.optopt("", "identity-export", "export the specified identity keypair to stdout", "IDENTITY_HASH");
+    
+    opts.optopt("e", "entrypoint", "IP address or hotsname of the network entrypoint", "ADDRESS");
 
     opts
 }

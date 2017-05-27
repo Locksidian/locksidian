@@ -22,13 +22,21 @@ pub fn handle(matches: Matches) -> LocksidianResult<String> {
 	// API
     else if matches.opt_present("daemon") {
         match matches.opt_str("daemon") {
-            Some(addr) => api::cli::start_daemon(addr, matches.opt_present("protected")),
+            Some(address) => api::cli::start_daemon(
+                address,
+                matches.opt_present("protected"),
+                matches.opt_str("entrypoint")
+            ),
             None => Err(LocksidianError::new(opts::usage()))
         }
     }
     else if opts::env("LS_DAEMON").is_some() {
         match opts::env("LS_DAEMON") {
-            Some(addr) => api::cli::start_daemon(addr, matches.opt_present("protected")),
+            Some(address) => api::cli::start_daemon(
+                address,
+                matches.opt_present("protected"),
+                matches.opt_str("entrypoint")
+            ),
             None => Err(LocksidianError::new(opts::usage()))
         }
     }

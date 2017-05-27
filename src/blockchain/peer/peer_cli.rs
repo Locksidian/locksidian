@@ -7,7 +7,16 @@ use blockchain::get_current_timestamp;
 use blockchain::peer::*;
 use blockchain::identity::identity_cli::get_active_identity;
 
-// Register a `Peer` into the registry.
+/// Register a batch of `Peer`s into the registry.
+pub fn register_batch(peers: &mut Vec<Peer>, repository: &PeerRepository) -> LocksidianResult<()> {
+    for peer in peers.iter_mut() {
+		register(peer, &repository)?;
+	}
+	
+	Ok(())
+}
+
+/// Register a `Peer` into the registry.
 pub fn register(peer: &mut Peer, repository: &PeerRepository) -> LocksidianResult<()> {
     peer.set_last_recv(get_current_timestamp());
     peer.set_last_sent(get_current_timestamp());
@@ -18,7 +27,7 @@ pub fn register(peer: &mut Peer, repository: &PeerRepository) -> LocksidianResul
     }
 }
 
-// Update an existing `PeerEntity`.
+/// Update an existing `PeerEntity`.
 fn update_existing_peer(entity: &mut PeerEntity, repository: &PeerRepository) -> LocksidianResult<()> {
     entity.last_recv = get_current_timestamp() as i32;
     entity.last_sent = get_current_timestamp() as i32;

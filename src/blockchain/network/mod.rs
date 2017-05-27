@@ -3,4 +3,5 @@
 mod p2p;
 mod http;
 
-pub use self::http::Client;
+pub use self::p2p::Client;
+pub use self::http::HttpClient;
