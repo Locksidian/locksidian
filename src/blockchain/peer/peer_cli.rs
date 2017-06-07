@@ -8,22 +8,27 @@ use blockchain::peer::*;
 use blockchain::identity::identity_cli::get_active_identity;
 
 /// Register a batch of `Peer`s into the registry.
-pub fn register_batch(peers: &mut Vec<Peer>, repository: &PeerRepository) -> LocksidianResult<()> {
+pub fn register_batch(peers: &mut Vec<Peer>, repository: &PeerRepository, current_address: &str) -> LocksidianResult<()> {
     for peer in peers.iter_mut() {
-		register(peer, &repository)?;
+		register(peer, &repository, current_address)?;
 	}
 	
 	Ok(())
 }
 
 /// Register a `Peer` into the registry.
-pub fn register(peer: &mut Peer, repository: &PeerRepository) -> LocksidianResult<()> {
-    peer.set_last_recv(get_current_timestamp());
-    peer.set_last_sent(get_current_timestamp());
+pub fn register(peer: &mut Peer, repository: &PeerRepository, current_address: &str) -> LocksidianResult<()> {
+    match peer.address().eq(current_address) {
+        true => Ok(()),
+        false => {
+            peer.set_last_recv(get_current_timestamp());
+            peer.set_last_sent(get_current_timestamp());
 
-    match repository.get(&peer.identity()) {
-        Some(mut entity) => update_existing_peer(&mut entity, &repository),
-        None => register_new_peer(&peer, &repository)
+            match repository.get(&peer.identity()) {
+                Some(mut entity) => update_existing_peer(&mut entity, &repository),
+                None => register_new_peer(&peer, &repository)
+            }
+        }
     }
 }
 

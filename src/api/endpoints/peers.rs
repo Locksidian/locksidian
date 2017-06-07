@@ -32,18 +32,15 @@ pub fn register(req: &mut Request) -> IronResult<Response> {
     let mut peer = body_to_peer(req)?;
     let connection = req.get_connection()?;
     let repository = PeerRepository::new(&*connection);
+    let address = req.get_node_address()?;
 
-    match peer_cli::register(&mut peer, &repository) {
-        Ok(_) => {
-            let address = req.get_node_address()?;
-            
-            match peer_cli::current_identity_as_peer(&*connection, address) {
-                Ok(peer) => match PeerDto::new(&peer) {
-                    Ok(dto) => response!(Ok, dto),
-                    Err(err) => response!(InternalServerError, {"error": err.description()})
-                },
+    match peer_cli::register(&mut peer, &repository, address.as_ref()) {
+        Ok(_) => match peer_cli::current_identity_as_peer(&*connection, address) {
+            Ok(peer) => match PeerDto::new(&peer) {
+                Ok(dto) => response!(Ok, dto),
                 Err(err) => response!(InternalServerError, {"error": err.description()})
-            }
+            },
+            Err(err) => response!(InternalServerError, {"error": err.description()})
         },
         Err(err) => response!(InternalServerError, {"error": err.description()})
     }

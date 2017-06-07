@@ -142,7 +142,7 @@ impl Server {
 		let peer = Peer::new(key, self.listen_addr())?;
 		
 		match client.register(&peer) {
-			Ok(mut peer) => peer_cli::register(&mut peer, &repository),
+			Ok(mut peer) => peer_cli::register(&mut peer, &repository, self.listen_addr.as_ref()),
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
@@ -150,7 +150,7 @@ impl Server {
 	/// If the registration process is successfull, we gather the `Peer`s list to update our registry.
 	fn register_network_peers<T: Client>(&self, client: &T, repository: &PeerRepository) -> LocksidianResult<()> {
 		let mut peers = client.get_peers()?;
-		peer_cli::register_batch(&mut peers, &repository)
+		peer_cli::register_batch(&mut peers, &repository, self.listen_addr.as_ref())
 	}
 
 	/// `listen_addr` getter.
