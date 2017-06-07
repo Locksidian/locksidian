@@ -1,11 +1,14 @@
 //! Block domain structure.
 
+use error::*;
+
 use num::pow::checked_pow as pow;
 use num_bigint::{BigUint, ToBigUint};
 
 use sec::sha::sha512;
 use sec::hex::*;
 
+use blockchain::get_current_timestamp;
 use blockchain::algorithm::ProofOfWork;
 use blockchain::identity::Identity;
 use blockchain::block::{BlockEntity, BlockRepository};
@@ -33,16 +36,16 @@ pub struct Block {
 impl Block {
 	
 	/// Instantiate a new `Block` containing an arbitrary JSON document.
-	pub fn new(data: String, author: &Identity, repository: &BlockRepository) -> Result<Self, String> {
+	pub fn new(data: String, author: &Identity, repository: &BlockRepository) -> LocksidianResult<Self> {
 		// Block creation timestamp
-		let timestamp = Block::get_current_timestamp();
-		let received_at = Block::get_current_timestamp();
+		let timestamp = get_current_timestamp();
+		let received_at = get_current_timestamp();
 		
 		// Compute data hash and browse the blockchain in order to find a possible duplicate
 		let data_hash = sha512(data.as_bytes());
 
 		match repository.get_by_data_hash(&data_hash) {
-			Some(entity) => Err(format!("Document hash {} is already stored in block {}", data_hash, entity.hash)),
+			Some(entity) => Err(LocksidianError::new(format!("Document hash {} is already stored in block {}", data_hash, entity.hash))),
 			None => {
 				let received_from = author.hash();
 				let block_author = author.hash();
@@ -77,17 +80,9 @@ impl Block {
 			}
 		}
 	}
-	
-	/// Return the current timestamp as an `u64`.
-	fn get_current_timestamp() -> u64 {
-		let current_time = ::time::get_time();
-		let milliseconds = current_time.sec as u64;
-		
-		milliseconds
-	}
 
 	/// Adapt a `BlockEntity` into a `Block` structure, consuming its instance.
-	pub fn from_entity(entity: BlockEntity) -> Result<Self, String> {
+	pub fn from_entity(entity: BlockEntity) -> LocksidianResult<Self> {
 		match entity.signature.from_hex() {
 			Ok(signature) => Ok(Block {
 				data: entity.data,
@@ -105,7 +100,7 @@ impl Block {
 				received_at: entity.received_at as u64,
 				received_from: entity.received_from
 			}),
-			Err(err) => Err(err.to_string())
+			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
 
@@ -183,11 +178,11 @@ impl Block {
 		}
 	}
 
-	fn validate_with_target(&self, target: &BigUint) -> Result<Option<(String, u32)>, String> {
+	fn validate_with_target(&self, target: &BigUint) -> LocksidianResult<Option<(String, u32)>> {
 		let hash = self.calculate_hash();
 		match BigUint::parse_bytes(hash.as_bytes(), 16) {
 			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
-			None => return Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash))
+			None => return Err(LocksidianError::new(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash)))
 		}
 	}
 
@@ -196,7 +191,7 @@ impl Block {
 impl ProofOfWork for Block {
 
 	/// Calculate the Proof of Work difficulty for the given `Block`.
-	fn difficulty(&self) -> Result<usize, String> {
+	fn difficulty(&self) -> LocksidianResult<usize> {
 		let base = 512;
 		let divider = 32;
 
@@ -206,20 +201,20 @@ impl ProofOfWork for Block {
 	}
 
 	/// Calculate the Proof of Work target based on the given `difficulty` factor.
-	fn target(&self, difficulty: usize) -> Result<BigUint, String> {
+	fn target(&self, difficulty: usize) -> LocksidianResult<BigUint> {
 		let base = 2;
 
 		match base.to_biguint() {
 			Some(base) => match pow(base, difficulty) {
 				Some(target) => Ok(target),
-				None => Err(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty))
+				None => Err(LocksidianError::new(format!("Unable to compute block's PoW: could not calculate 2^{}", difficulty)))
 			},
-			None => Err(format!("Unable to compute block's PoW: {} could not be converted to BigUint", base))
+			None => Err(LocksidianError::new(format!("Unable to compute block's PoW: {} could not be converted to BigUint", base)))
 		}
 	}
 
 	/// Compute the `Block` nonce using the proof of work algorithm.
-	fn compute(&mut self) -> Result<(String, u32), String> {
+	fn compute(&mut self) -> LocksidianResult<(String, u32)> {
 		let difficulty = self.difficulty()?;
 		let target = self.target(difficulty)?;
 		self.signature = self.signature().to_vec();
@@ -230,14 +225,15 @@ impl ProofOfWork for Block {
 			match self.validate_with_target(&target) {
 				Ok(Some(result)) => return Ok(result),
 				Ok(None) => { self.nonce += 1; },
-				Err(err) => return Err(err.to_string())
+				Err(err) => return Err(LocksidianError::from_err(err))
 			}
 		};
 	}
 
-	fn validate(&self) -> Result<Option<(String, u32)>, String> {
+	fn validate(&self) -> LocksidianResult<Option<(String, u32)>> {
 		let difficulty = self.difficulty()?;
 		let target = self.target(difficulty)?;
+
 		self.validate_with_target(&target)
 	}
 }

@@ -4,7 +4,7 @@
 mod macros;
 
 #[macro_use]
-mod client;
+pub mod client;
 
 mod router;
 mod server;

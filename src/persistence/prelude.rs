@@ -4,6 +4,8 @@
 
 use std::sync::Arc;
 
+pub use error::*;
+
 pub use diesel::prelude::*;
 pub use diesel::sqlite::SqliteConnection;
 
@@ -17,5 +19,5 @@ pub type ConnectionPool = Arc<Pool<ConnectionManager<SqliteConnection>>>;
 pub type PooledConnection = ::r2d2::PooledConnection<ConnectionManager<SqliteConnection>>;
 
 pub trait PoolExtractor {
-    fn get_connection(&self) -> Result<PooledConnection, String>;
+    fn get_connection(&self) -> ::iron::IronResult<PooledConnection>;
 }

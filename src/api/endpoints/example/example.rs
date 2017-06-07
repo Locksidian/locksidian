@@ -52,7 +52,7 @@ pub fn persisted_add_values(req: &mut Request) -> IronResult<Response> {
                 None => response!(NoContent, {})
             }
         },
-        Err(msg) => response!(InternalServerError, {"error": msg})
+        Err(err) => response!(InternalServerError, {"error": err.description()})
     }
 }
 
@@ -65,11 +65,11 @@ pub fn http_client(req: &mut Request) -> IronResult<Response> {
                         "status": res.status.to_string(),
                         "body": post
                     }),
-                Err(msg) => response!(InternalServerError, {"error": msg})
+                Err(err) => response!(InternalServerError, {"error": err.description()})
             },
             Err(err) => response!(InternalServerError, {"error": err.to_string()})
         },
-        Err(msg) => response!(InternalServerError, {"error": msg})
+        Err(err) => response!(InternalServerError, {"error": err.description()})
     }
 }
 

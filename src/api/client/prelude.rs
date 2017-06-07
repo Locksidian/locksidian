@@ -7,5 +7,5 @@ pub use std::io::Read;
 pub use hyper::Client;
 
 pub trait ClientExtractor {
-    fn get_client(&self) -> Result<&Arc<Client>, String>;
+    fn get_client(&self) -> ::iron::IronResult<&Arc<Client>>;
 }
