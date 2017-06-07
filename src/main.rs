@@ -408,6 +408,7 @@ mod api;
 mod blockchain;
 
 use error::*;
+use persistence::prelude::*;
 use std::process::exit;
 
 /// Process executed successfully
@@ -427,6 +428,14 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.
 fn main() {
+    match setup_registry() {
+        Ok(()) => (),
+        Err(err) => {
+            println!("{}", err.description());
+            exit(EXIT_FAILURE);
+        }
+    }
+
     match opts::init() {
         Ok(matches) => match cli::handle(matches) {
             Ok(success) => {
@@ -443,4 +452,12 @@ fn main() {
             exit(EXIT_FAILURE);
         }
     }
+}
+
+/// Establish a connection to the registry and setup the database schemas.
+fn setup_registry() -> LocksidianResult<()> {
+    let connection = get_connection(database_path())?;
+    setup_database(&connection)?;
+
+    Ok(())
 }

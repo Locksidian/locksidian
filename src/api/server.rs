@@ -93,20 +93,12 @@ impl Server {
 
     /// Callback method called when the `Locksidian` server starts.
     fn on_start(&self) -> LocksidianResult<()> {
-		let connection = self.setup_database()?;
+		let connection = get_connection(database_path())?;
 		let identity = self.setup_identity(&connection)?;
 		
 		self.setup_network(&connection, &identity)?;
 		
 		Ok(())
-    }
-    
-	/// Establish a connection to the registry and setup the database schemas.
-    fn setup_database(&self) -> LocksidianResult<SqliteConnection> {
-        let connection = get_connection(database_path())?;
-        setup_database(&connection)?;
-		
-		Ok(connection)
     }
 	
 	/// Gather and return the currently configured `Identity`.
