@@ -11,7 +11,8 @@ use sec::hex::*;
 use blockchain::get_current_timestamp;
 use blockchain::algorithm::ProofOfWork;
 use blockchain::identity::Identity;
-use blockchain::block::{BlockEntity, BlockRepository};
+
+use super::*;
 
 pub struct Block {
 	// Block data
@@ -43,41 +44,36 @@ impl Block {
 		
 		// Compute data hash and browse the blockchain in order to find a possible duplicate
 		let data_hash = sha512(data.as_bytes());
+		Block::assert_document_uniqueness(data_hash.as_ref(), &repository)?;
+		
+		// Create a partial `Block` structure used to calculate the PoW algorithm
+		let signature = author.key().sign(data.as_bytes())?;
+		let head = repository.get_head().unwrap_or(BlockEntity::empty());
+		
+		let mut block = Block {
+			data: data,
+			
+			data_hash: data_hash,
+			signature: signature,
+			timestamp: timestamp,
+			nonce: 0,
+			previous: head.hash,
+			
+			hash: String::new(),
+			height: (head.height + 1) as u64,
+			next: String::new(),
+			author: author.hash(),
+			received_at: received_at,
+			received_from: author.hash()
+		};
 
-		match repository.get_by_data_hash(&data_hash) {
-			Some(entity) => Err(LocksidianError::new(
-				format!("Document hash {} is already stored in block {}", data_hash, entity.hash)
-			)),
-			None => {
-				let signature = author.key().sign(data.as_bytes())?;
-				let head = repository.get_head().unwrap_or(BlockEntity::empty());
-				
-				// Create a partial `Block` structure used to calculate the PoW algorithm
-				let mut block = Block {
-					data: data,
-					
-					data_hash: data_hash,
-					signature: signature,
-					timestamp: timestamp,
-					nonce: 0,
-					previous: head.hash,
-					
-					hash: String::new(),
-					height: (head.height + 1) as u64,
-					next: String::new(),
-					author: author.hash(),
-					received_at: received_at,
-					received_from: author.hash()
-				};
+		// Compute the PoW
+		let (hash, nonce) = block.compute()?;
+		block.nonce = nonce;
+		block.hash = hash;
 
-				let (hash, nonce) = block.compute()?;
-				block.nonce = nonce;
-				block.hash = hash;
-
-				// Return our complete `Block` structure
-				Ok(block)
-			}
-		}
+		// Return our complete `Block` structure
+		Ok(block)
 	}
 
 	/// Adapt a `BlockEntity` into a `Block` structure, consuming its instance.
@@ -100,6 +96,61 @@ impl Block {
 				received_from: entity.received_from
 			}),
 			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	/// Create a new `Block` structure from the replication data provided by one of the network peers
+	/// through the use of a `BlockReplicationDto`.
+	pub fn replicate_from(dto: BlockReplicationDto, repository: &BlockRepository) -> LocksidianResult<Self> {
+		let replica = Block::partial_replica(dto)?;
+		let data_hash = Block::check_data_hash(&replica)?;
+		
+		Block::assert_document_uniqueness(data_hash.as_ref(), &repository)?;
+		replica.validate()?;
+		
+		Ok(replica)
+	}
+	
+	/// Create a partial `Block` replica from a `BlockReplicationDto`.
+	fn partial_replica(dto: BlockReplicationDto) -> LocksidianResult<Self> {
+		match dto.signature.from_hex() {
+			Ok(signature) => Ok(Block {
+				data: dto.data,
+				
+				data_hash: dto.data_hash,
+				signature: signature,
+				timestamp: dto.timestamp,
+				nonce: dto.nonce,
+				previous: dto.previous,
+				
+				hash: dto.hash,
+				height: dto.height,
+				next: String::new(),
+				author: dto.author,
+				received_at: get_current_timestamp(),
+				received_from: dto.received_from
+			}),
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	/// Returns an error if the recomputed data checksum does not match the stored `data_hash`.
+	fn check_data_hash(block: &Block) -> LocksidianResult<String> {
+		let recomputed_data_hash = sha512(block.data.as_bytes());
+		
+		match block.data_hash == recomputed_data_hash {
+			true => Ok(recomputed_data_hash),
+			false => Err(LocksidianError::new(String::from("Replica data_hash does not match the recomputed data checksum")))
+		}
+	}
+	
+	/// Returns an `Error` if the specified document hash does exist in the local registry.
+	fn assert_document_uniqueness(data_hash: &str, repository: &BlockRepository) -> LocksidianResult<()> {
+		match repository.get_by_data_hash(data_hash) {
+			Some(entity) => Err(LocksidianError::new(
+				format!("Document hash {} is already stored in block {}", data_hash, entity.hash)
+			)),
+			None => Ok(())
 		}
 	}
 	
