@@ -1,9 +1,8 @@
 //! Blockchain networking client.
 
-#![allow(dead_code)]
-
 use error::*;
-use api::client::prelude::*;
+use std::io::Read;
+use hyper::Client;
 
 use hyper::header::{Headers, ContentType};
 use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
@@ -29,6 +28,7 @@ impl HttpClient {
         HttpClient::new(HttpClient::default_client(), address)
     }
     
+    #[allow(dead_code)]
     pub fn from_peer(peer: &Peer) -> Self {
         HttpClient::new(HttpClient::default_client(), peer.address())
     }

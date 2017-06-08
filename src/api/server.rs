@@ -55,7 +55,6 @@ impl Server {
             chain.link_before(ProtectedMiddleware::new());
         }
 
-        chain.link_before(ClientMiddleware::new());
         chain.link_after(HeadersMiddleware);
 
         Ok(chain)

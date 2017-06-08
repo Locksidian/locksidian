@@ -45,12 +45,11 @@ impl Block {
 		let data_hash = sha512(data.as_bytes());
 
 		match repository.get_by_data_hash(&data_hash) {
-			Some(entity) => Err(LocksidianError::new(format!("Document hash {} is already stored in block {}", data_hash, entity.hash))),
+			Some(entity) => Err(LocksidianError::new(
+				format!("Document hash {} is already stored in block {}", data_hash, entity.hash)
+			)),
 			None => {
-				let received_from = author.hash();
-				let block_author = author.hash();
 				let signature = author.key().sign(data.as_bytes())?;
-
 				let head = repository.get_head().unwrap_or(BlockEntity::empty());
 				
 				// Create a partial `Block` structure used to calculate the PoW algorithm
@@ -66,9 +65,9 @@ impl Block {
 					hash: String::new(),
 					height: (head.height + 1) as u64,
 					next: String::new(),
-					author: block_author,
+					author: author.hash(),
 					received_at: received_at,
-					received_from: received_from
+					received_from: author.hash()
 				};
 
 				let (hash, nonce) = block.compute()?;
@@ -101,6 +100,31 @@ impl Block {
 				received_from: entity.received_from
 			}),
 			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	/// Calculate the current `Block` hash.
+	fn calculate_hash(&self) -> String {
+		let pow_buffer = format!("{}{}{}{}{}", self.data_hash, self.signature.to_hex(), self.timestamp(), self.nonce, self.previous);
+		sha512(pow_buffer.as_bytes())
+	}
+	
+	/// If the provided `pow_value` (representing the decimal value of `pow_hash`) is lower than the
+	/// Proof of Work `target`, a tuple containing the PoW hash and nonce is returned.
+	fn is_pow_valid(&self, pow_hash: String, pow_value: BigUint, target: &BigUint) -> Option<(String, u32)> {
+		match pow_value < *target {
+			true => Some((pow_hash, self.nonce)),
+			false => None
+		}
+	}
+	
+	/// Validate the PoW computation for the current `Block` instance.
+	fn validate_with_target(&self, target: &BigUint) -> LocksidianResult<Option<(String, u32)>> {
+		let hash = self.calculate_hash();
+		
+		match BigUint::parse_bytes(hash.as_bytes(), 16) {
+			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
+			None => return Err(LocksidianError::new(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash)))
 		}
 	}
 
@@ -163,29 +187,6 @@ impl Block {
 	pub fn received_from(&self) -> String {
 		self.received_from.clone()
 	}
-
-	fn calculate_hash(&self) -> String {
-		let pow_buffer = format!("{}{}{}{}{}", self.data_hash, self.signature.to_hex(), self.timestamp(), self.nonce, self.previous);
-		sha512(pow_buffer.as_bytes())
-	}
-
-	fn is_pow_valid(&self, pow_hash: String, pow_value: BigUint, target: &BigUint) -> Option<(String, u32)> {
-		if pow_value < *target {
-			Some((pow_hash, self.nonce))
-		}
-		else {
-			None
-		}
-	}
-
-	fn validate_with_target(&self, target: &BigUint) -> LocksidianResult<Option<(String, u32)>> {
-		let hash = self.calculate_hash();
-		match BigUint::parse_bytes(hash.as_bytes(), 16) {
-			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
-			None => return Err(LocksidianError::new(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash)))
-		}
-	}
-
 }
 
 impl ProofOfWork for Block {
@@ -324,22 +325,18 @@ mod test {
 	#[test]
 	fn block_pow_should_validate_when_target_is_valid() {
 		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-
 		block.nonce = 12623;
 
 		let result = block.validate().unwrap();
-
 		assert_eq!(Some((block.calculate_hash(), block.nonce)), result);
 	}
 
 	#[test]
 	fn block_pow_should_not_validate_when_nonce_is_not_ok() {
 		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-
 		block.nonce = 12622;
 
 		let result = block.validate().unwrap();
-
 		assert_eq!(None, result);
 	}
 }
