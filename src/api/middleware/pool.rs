@@ -14,6 +14,7 @@
 //! }
 //! ```
 
+use error::*;
 use std::sync::Arc;
 
 use iron::prelude::*;
@@ -31,7 +32,7 @@ impl typemap::Key for PoolMiddleware {
 
 impl PoolMiddleware {
     /// Connection pool configuration using a custom `Config` builder.
-    pub fn new(database_path: String) -> Result<PoolMiddleware, String> {
+    pub fn new(database_path: String) -> LocksidianResult<PoolMiddleware> {
         check_database_path(database_path.as_ref());
 
         let config = Config::default();
@@ -41,7 +42,7 @@ impl PoolMiddleware {
             Ok(pool) => Ok(PoolMiddleware {
                 pool: Arc::new(pool)
             }),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(LocksidianError::from_err(err))
         }
     }
 }
@@ -54,13 +55,13 @@ impl BeforeMiddleware for PoolMiddleware {
 }
 
 impl<'a, 'b> PoolExtractor for Request<'a, 'b> {
-    fn get_connection(&self) -> Result<PooledConnection, String> {
+    fn get_connection(&self) -> IronResult<PooledConnection> {
         match self.extensions.get::<PoolMiddleware>() {
             Some(pool) => match pool.get() {
                 Ok(connection) => Ok(connection),
-                Err(err) => Err(err.to_string())
+                Err(err) => error!(InternalServerError, {"error": err.description()})
             },
-            None => Err(String::from("No connection pool is embedded in this request"))
+            None => error!(InternalServerError, {"error": "No connection pool is embedded in this request"})
         }
     }
 }

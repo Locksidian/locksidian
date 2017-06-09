@@ -1,6 +1,6 @@
 [package]
 name = "locksidian"
-version = "0.1.1"
+version = "0.1.2"
 description = "The one vault your data really need"
 authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval <aurelien.duval6@gmail.com>"]
 
@@ -15,9 +15,9 @@ openssl = "0.9.10"
 rust-crypto = "0.2.36"
 rustc-serialize = "0.3.22"
 
-serde = "0.9.6"
-serde_derive = "0.9.6"
-serde_json = "0.9.5"
+serde = "1.0.8"
+serde_derive = "1.0.8"
+serde_json = "1.0.2"
 serde_wat = "0.1.0"
 
 hyper = "0.10.4"

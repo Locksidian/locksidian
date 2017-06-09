@@ -1,33 +1,37 @@
 //! Identity Command Line Interface.
 
+use error::*;
+
 use sec::rsa::Rsa;
 use sec::hex::*;
+use sec::sha::sha512;
+use sec::ripemd::ripemd160;
 
 use persistence::prelude::*;
 use blockchain::identity::*;
 
 /// Return the currently active `Identity`
-pub fn get_active_identity(connection: &SqliteConnection) -> Result<Identity, String> {
+pub fn get_active_identity(connection: &SqliteConnection) -> LocksidianResult<Identity> {
 	let repository = IdentityRepository::new(&connection);
 	
 	match repository.get_active() {
 		Some(entity) => entity.to_identity(),
-		None => Err(String::from("Locksidian node cannot operate without an active identity!"))
+		None => Err(LocksidianError::new(String::from("Locksidian node cannot operate without an active identity!")))
 	}
 }
 
 /// Define the `Identity` identified by the provided `hash` as the currently active one.
-pub fn set_active_identity(hash: String) -> Result<String, String> {
+pub fn set_active_identity(hash: String) -> LocksidianResult<String> {
 	let connection = get_connection(database_path())?;
 	let repository = IdentityRepository::new(&connection);
 
 	match repository.get(&hash) {
 		Some(mut entity) => match repository.update_as_active(&mut entity) {
 			Ok(1) => Ok(hash),
-			Ok(updated_rows) => Err(format!("An unexpected number of rows were updated in the registry. Expected: 1. Got: {}.", updated_rows)),
-			Err(msg) => Err(msg)
+			Ok(updated_rows) => Err(LocksidianError::new(format!("An unexpected number of rows were updated in the registry. Expected: 1. Got: {}.", updated_rows))),
+			Err(err) => Err(err)
 		},
-		None => Err(format!("An unknown identity hash was provided: {}", hash))
+		None => Err(LocksidianError::new(format!("An unknown identity hash was provided: {}", hash)))
 	}
 }
 
@@ -37,7 +41,7 @@ pub fn set_active_identity(hash: String) -> Result<String, String> {
 /// `Ok(hash)`.
 ///
 /// Otherwise, an error is thrown.
-pub fn generate_new_identity(requested_key_size: String) -> Result<String, String> {
+pub fn generate_new_identity(requested_key_size: String) -> LocksidianResult<String> {
 	match requested_key_size.parse::<u32>() {
 		Ok(key_size) => {
 			let identity = Identity::generate(key_size)?;
@@ -49,11 +53,11 @@ pub fn generate_new_identity(requested_key_size: String) -> Result<String, Strin
 			//TODO: save as inactive
 			match repository.save_as_active(&mut entity) {
 				Ok(1) => Ok(identity.hash()),
-				Ok(inserted_rows) => Err(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows)),
-				Err(msg) => Err(msg)
+				Ok(inserted_rows) => Err(LocksidianError::new(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows))),
+				Err(err) => Err(err)
 			}
 		},
-		Err(err) => Err(err.to_string())
+		Err(err) => Err(LocksidianError::from_err(err))
 	}
 }
 
@@ -65,7 +69,7 @@ pub fn generate_new_identity(requested_key_size: String) -> Result<String, Strin
 /// in the local registry and set as inactive.
 ///
 /// You have to explicitly call `locksidian --identity {hash}` to set an imported `Identity` as active.
-pub fn import_identity_from_pem_file(path: String) -> Result<String, String> {
+pub fn import_identity_from_pem_file(path: String) -> LocksidianResult<String> {
 	let connection = get_connection(database_path())?;
 	let repository = IdentityRepository::new(&connection);
 
@@ -74,14 +78,14 @@ pub fn import_identity_from_pem_file(path: String) -> Result<String, String> {
 	let identity = Identity::new(key)?;
 
 	match repository.get(&identity.hash()) {
-		Some(_) => Err(format!("This identity is already configured on this node: {}", identity.hash())),
+		Some(_) => Err(LocksidianError::new(format!("This identity is already configured on this node: {}", identity.hash()))),
 		None => {
 			let entity = IdentityEntity::new(&identity)?;
 
 			match repository.save(&entity) {
 				Ok(1) => Ok(identity.hash()),
-				Ok(inserted_rows) => Err(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows)),
-				Err(msg) => Err(msg)
+				Ok(inserted_rows) => Err(LocksidianError::new(format!("An unexpected number of rows were inserted into the registry. Expected: 1. Got: {}.", inserted_rows))),
+				Err(err) => Err(err)
 			}
 		}
 	}	
@@ -89,12 +93,20 @@ pub fn import_identity_from_pem_file(path: String) -> Result<String, String> {
 
 /// Export the PEM-encoded hexadecimal string representing the private key of the specified
 /// `Identity`.
-pub fn export_identity(hash: String) -> Result<String, String> {
+pub fn export_identity(hash: String) -> LocksidianResult<String> {
 	let connection = get_connection(database_path())?;
 	let repository = IdentityRepository::new(&connection);
 
 	match repository.get(&hash) {
 		Some(entity) => Ok(entity.keypair()),
-		None => Err(format!("The specified identity does not exists: {}", hash)),
+		None => Err(LocksidianError::new(format!("The specified identity does not exists: {}", hash))),
 	}
+}
+
+/// Compute the identity hash of the given `Rsa` key.
+pub fn compute_key_hash(key: &Rsa) -> LocksidianResult<String> {
+	let sha_hash = sha512(key.export_public_key()?.as_slice());
+	let hash = ripemd160(sha_hash.as_bytes());
+	
+	Ok(hash)
 }

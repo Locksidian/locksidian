@@ -30,7 +30,7 @@ impl IdentityEntity {
 	/// Instantiate a new `IdentityEntity` based on the given `Identity`.
 	///
 	/// The private key is PEM-encoded and stored as an hexadecimal string.
-	pub fn new(identity: &Identity) -> Result<IdentityEntity, String> {
+	pub fn new(identity: &Identity) -> LocksidianResult<IdentityEntity> {
 		Ok(IdentityEntity {
 			hash: identity.hash(),
 			keypair: identity.private_key_to_hex()?,
@@ -42,20 +42,18 @@ impl IdentityEntity {
 	///
 	/// If the `hash` generated from the new `Identity` structure differs from the one stored
 	/// into this `IdentityEntity`, the `RSA` keypair may have be corrupted, resulting in an `Err`.
-	pub fn to_identity(&self) -> Result<Identity, String> {
+	pub fn to_identity(&self) -> LocksidianResult<Identity> {
 		match self.keypair.from_hex() {
 			Ok(key_pem) => {
 				let keypair = Rsa::from_private_key(key_pem.as_slice(), "")?;
 				let identity = Identity::new(keypair)?;
 				
-				if self.hash == identity.hash() {
-					Ok(identity)
-				}
-				else {
-					Err(String::from("Identity hash mismatch!"))
+				match self.hash == identity.hash() {
+					true => Ok(identity),
+					false => Err(LocksidianError::new(String::from("Identity hash mismatch!")))
 				}
 			},
-			Err(err) => Err(err.to_string())
+			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
 	
@@ -101,7 +99,7 @@ impl<'pool> IdentityRepository<'pool> {
 	
 	/// Gather all the active `IdentityEntity` that are persisted, set them as inactive and update
 	/// them. Then, persist the given `IdentityEntity` as the only active one.
-	pub fn save_as_active(&self, entity: &mut IdentityEntity) -> Result<usize, String> {
+	pub fn save_as_active(&self, entity: &mut IdentityEntity) -> LocksidianResult<usize> {
 		self.set_all_inactive();
 		entity.set_active(true);
 		
@@ -110,7 +108,7 @@ impl<'pool> IdentityRepository<'pool> {
 
 	/// Gather all the active `IdentityEntity` that are persisted, set them as inactive and update
 	/// them. Then, update the given `IdentityEntity` as the only active one.
-	pub fn update_as_active(&self, entity: &mut IdentityEntity) -> Result<usize, String> {
+	pub fn update_as_active(&self, entity: &mut IdentityEntity) -> LocksidianResult<usize> {
 		self.set_all_inactive();
 		entity.set_active(true);
 		

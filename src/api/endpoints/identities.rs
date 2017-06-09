@@ -22,27 +22,23 @@ use blockchain::identity::*;
 /// *Note*: only the **public key** can be transferred through a DTO, in order to avoid the leak
 /// of the node's private key.
 pub fn get_all(req: &mut Request) -> IronResult<Response> {
-	match req.get_connection() {
-		Ok(connection) => {
-			let repository = IdentityRepository::new(&*connection);
+	let connection = req.get_connection()?;
+	let repository = IdentityRepository::new(&*connection);
+	
+	match repository.get_all() {
+		Some(entities) => {
+			let identities: Vec<IdentityDto> = entities.iter()
+				.map(|entity| entity.to_identity())
+				.filter(|identity| identity.is_ok())
+				.map(|identity| identity.unwrap())
+				.map(|identity| IdentityDto::new(&identity))
+				.filter(|dto| dto.is_ok())
+				.map(|dto| dto.unwrap())
+				.collect();
 			
-			match repository.get_all() {
-				Some(entities) => {
-					let identities: Vec<IdentityDto> = entities.iter()
-						.map(|entity| entity.to_identity())
-						.filter(|identity| identity.is_ok())
-						.map(|identity| identity.unwrap())
-						.map(|identity| IdentityDto::new(&identity))
-						.filter(|dto| dto.is_ok())
-						.map(|dto| dto.unwrap())
-						.collect();
-					
-					response!(Ok, {"identities": identities})
-				},
-				None => response!(NoContent, {})
-			}
+			response!(Ok, {"identities": identities})
 		},
-		Err(msg) => response!(InternalServerError, {"error": msg})
+		None => response!(NoContent, {})
 	}
 }
 
@@ -57,17 +53,14 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 /// }
 /// ```
 pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
-	match req.get_connection() {
-		Ok(connection) => {
-			match cli::get_active_identity(&*connection) {
-				Ok(identity) => match IdentityDto::new(&identity) {
-					Ok(dto) => response!(Ok, {"identity": dto}),
-					Err(msg) => response!(InternalServerError, {"error": msg})
-				},
-				Err(_) => response!(NoContent, {})
-			}
+	let connection = req.get_connection()?;
+	
+	match identity_cli::get_active_identity(&*connection) {
+		Ok(identity) => match IdentityDto::new(&identity) {
+			Ok(dto) => response!(Ok, {"identity": dto}),
+			Err(err) => response!(InternalServerError, {"error": err.description()})
 		},
-		Err(msg) => response!(InternalServerError, {"error": msg})
+		Err(_) => response!(NoContent, {})
 	}
 }
 
@@ -91,14 +84,14 @@ pub fn get_identity_by_hash(req: &mut Request) -> IronResult<Response> {
 					Some(entity) => match entity.to_identity() {
 						Ok(identity) => match IdentityDto::new(&identity) {
 							Ok(dto) => response!(Ok, {"identity": dto}),
-							Err(msg) => response!(InternalServerError, {"error": msg})
+							Err(err) => response!(InternalServerError, {"error": err.description()})
 						},
-						Err(msg) => response!(InternalServerError, {"error": msg})
+						Err(err) => response!(InternalServerError, {"error": err.description()})
 					},
 					None => response!(NoContent, {})
 				}
 			},
-			Err(msg) => response!(InternalServerError, {"error": msg})
+			Err(err) => response!(InternalServerError, {"error": err.description()})
 		},
 		None => response!(BadRequest, {"error": "Hash parameter cannot be empty"})
 	}

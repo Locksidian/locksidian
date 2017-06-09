@@ -20,6 +20,10 @@ pub fn routes() -> Router {
         store_document: post "/blocks" => endpoints::blocks::store_document,
         get_block: get "/blocks/:hash" => endpoints::blocks::get_block,
 
+        // Peer API
+        register: post "/peers/register" => endpoints::peers::register,
+        peers_all: get "/peers" => endpoints::peers::get_all,
+
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found
     )

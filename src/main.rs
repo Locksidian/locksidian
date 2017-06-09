@@ -395,16 +395,20 @@ extern crate r2d2;
 extern crate r2d2_diesel;
 
 // Project modules
+mod error;
 mod opts;
-pub mod sec;
+mod sec;
 
 mod cli;
 #[macro_use]
 mod persistence;
+#[macro_use]
 mod api;
 
 mod blockchain;
 
+use error::*;
+use persistence::prelude::*;
 use std::process::exit;
 
 /// Process executed successfully
@@ -424,20 +428,36 @@ const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
 /// Locksidian entry point.
 fn main() {
+    match setup_registry() {
+        Ok(()) => (),
+        Err(err) => {
+            println!("{}", err.description());
+            exit(EXIT_FAILURE);
+        }
+    }
+
     match opts::init() {
         Ok(matches) => match cli::handle(matches) {
             Ok(success) => {
                 println!("{}", success);
                 exit(EXIT_SUCCESS);
             },
-            Err(msg) => {
-                println!("{}", msg);
+            Err(err) => {
+                println!("{}", err.description());
                 exit(EXIT_FAILURE);
             }
         },
-        Err(msg) => {
-            println!("{}\n\n{}", msg, opts::usage());
+        Err(err) => {
+            println!("{}\n\n{}", err.description(), opts::usage());
             exit(EXIT_FAILURE);
         }
     }
+}
+
+/// Establish a connection to the registry and setup the database schemas.
+fn setup_registry() -> LocksidianResult<()> {
+    let connection = get_connection(database_path())?;
+    setup_database(&connection)?;
+
+    Ok(())
 }

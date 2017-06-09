@@ -18,9 +18,9 @@ macro_rules! client_body {
             match $res.read_to_string(&mut client_body) {
                 Ok(_) => match ::serde_json::from_str::<$target>(&client_body) {
                     Ok(result) => Ok(result),
-                    Err(err) => Err(err.to_string())
+                    Err(err) => Err(LocksidianError::from_err(err))
                 },
-                Err(err) => Err(err.to_string())
+                Err(err) => Err(LocksidianError::from_err(err))
             }
         }
     }
