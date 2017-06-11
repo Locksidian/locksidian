@@ -19,6 +19,7 @@ pub fn routes() -> Router {
         show_head: get "/blocks" => endpoints::blocks::show_head,
         store_document: post "/blocks" => endpoints::blocks::store_document,
         get_block: get "/blocks/:hash" => endpoints::blocks::get_block,
+        blocks_replicate: put "/blocks" => endpoints::blocks::replicate_block,
 
         // Peer API
         register: post "/peers/register" => endpoints::peers::register,
