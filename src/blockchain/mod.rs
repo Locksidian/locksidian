@@ -6,6 +6,7 @@ pub mod network;
 pub mod identity;
 pub mod block;
 pub mod peer;
+pub mod metric;
 
 /// Return the current timestamp as an `u64`.
 pub fn get_current_timestamp() -> u64 {

@@ -24,6 +24,9 @@ pub fn routes() -> Router {
         register: post "/peers/register" => endpoints::peers::register,
         peers_all: get "/peers" => endpoints::peers::get_all,
 
+        // Metrics API
+        metrics: get "/metrics" => endpoints::metrics::get_all,
+
         // Redirect all other requests to the 404 handler
         not_found: any "/**" => endpoints::error::not_found
     )
