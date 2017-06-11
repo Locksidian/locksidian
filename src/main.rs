@@ -386,6 +386,8 @@ extern crate iron;
 extern crate bodyparser;
 extern crate iron_test;
 
+extern crate ipnetwork;
+
 #[macro_use]
 extern crate diesel;
 #[macro_use]
