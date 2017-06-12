@@ -36,8 +36,6 @@ pub fn are_addresses_in_same_network(left :Ipv4Addr, right: Ipv4Addr) -> bool {
     let left_network = Ipv4Network::new(left, left_subnet).unwrap();
     let right_network = Ipv4Network::new(right, right_subnet).unwrap();
 
-    println!("NET : {} - {}", left_subnet, right_subnet);
-
     left_network.contains(right_network.network())
 }
 
