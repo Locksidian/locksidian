@@ -99,16 +99,50 @@ impl Block {
 		}
 	}
 	
+	/// Adapt a `BlockDto` into a `Block` structure.
+	pub fn from_dto(dto: BlockDto, received_from: Option<&String>) -> LocksidianResult<Self> {
+		match dto.signature.from_hex() {
+			Ok(signature) => Ok(Block {
+				data: dto.data,
+				
+				data_hash: dto.data_hash,
+				signature: signature,
+				timestamp: dto.timestamp,
+				nonce: dto.nonce,
+				previous: dto.previous,
+				
+				hash: dto.hash,
+				height: dto.height,
+				next: dto.next,
+				author: dto.author,
+				received_at: get_current_timestamp(),
+				received_from: received_from.unwrap_or(&dto.received_from).clone()
+			}),
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
 	/// Create a new `Block` structure from the replication data provided by one of the network peers
 	/// through the use of a `BlockReplicationDto`.
 	pub fn replicate_from(dto: BlockReplicationDto, repository: &BlockRepository) -> LocksidianResult<Self> {
 		let replica = Block::partial_replica(dto)?;
-		let data_hash = Block::check_data_hash(&replica)?;
-		
-		Block::assert_document_uniqueness(data_hash.as_ref(), &repository)?;
-		replica.validate()?;
+		replica.integrity_check(&repository)?;
 		
 		Ok(replica)
+	}
+	
+	/// Perform an integrity check of the provided `Block`, namely:
+	///
+	/// - Recompute and check the validity of the document checksum;
+	/// - Assert the uniqueness of the JSON document stored into this `Block`;
+	/// - Validate the Proof of Work.
+	pub fn integrity_check(&self, repository: &BlockRepository) -> LocksidianResult<()> {
+		let data_hash = self.check_data_hash()?;
+		
+		Block::assert_document_uniqueness(data_hash.as_ref(), &repository)?;
+		self.validate()?;
+		
+		Ok(())
 	}
 	
 	/// Create a partial `Block` replica from a `BlockReplicationDto`.
@@ -135,10 +169,10 @@ impl Block {
 	}
 	
 	/// Returns an error if the recomputed data checksum does not match the stored `data_hash`.
-	fn check_data_hash(block: &Block) -> LocksidianResult<String> {
-		let recomputed_data_hash = sha512(block.data.as_bytes());
+	fn check_data_hash(&self) -> LocksidianResult<String> {
+		let recomputed_data_hash = sha512(self.data.as_bytes());
 		
-		match block.data_hash == recomputed_data_hash {
+		match self.data_hash == recomputed_data_hash {
 			true => Ok(recomputed_data_hash),
 			false => Err(LocksidianError::new(String::from("Replica data_hash does not match the recomputed data checksum")))
 		}

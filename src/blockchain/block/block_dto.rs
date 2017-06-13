@@ -15,20 +15,20 @@ use blockchain::identity::Identity;
 	Serialize, Deserialize
 )]
 pub struct BlockDto {
-    data: String,
-
-    data_hash: String,
-    signature: String,
-    timestamp: u64,
-    nonce: u32,
-    previous: String,
-
-    hash: String,
-    height: u64,
-    next: String,
-    author: String,
-    received_at: u64,
-    received_from: String
+    pub data: String,
+    
+    pub data_hash: String,
+    pub signature: String,
+    pub timestamp: u64,
+    pub nonce: u32,
+    pub previous: String,
+    
+    pub hash: String,
+    pub height: u64,
+    pub next: String,
+    pub author: String,
+    pub received_at: u64,
+    pub received_from: String
 }
 
 impl BlockDto {
