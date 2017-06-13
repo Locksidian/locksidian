@@ -97,7 +97,7 @@ impl p2p::Client for HttpClient {
 		let dto = BlockReplicationDto::new(&block, &identity);
 		let json = self.to_json(&dto)?;
 		
-		match self.client.put(&url).body(&json).send() {
+		match self.client.put(&url).headers(self.headers()).body(&json).send() {
 			Ok(_) => Ok(()),
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
