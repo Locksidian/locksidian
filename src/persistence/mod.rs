@@ -22,7 +22,7 @@ use std::fs;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
-/*#[cfg(target_os = "windows")]
+#[cfg(target_os = "windows")]
 pub fn database_path() -> String {
     match ::opts::env("APPDATA") {
         Some(appdata) => format!("{}\\locksidian\\locksidian.db", appdata),
@@ -38,10 +38,6 @@ pub fn database_path() -> String {
         Some(home) => format!("{}/.locksidian/locksidian.db", home),
         None => String::from("locksidian.db")
     }
-}*/
-
-pub fn database_path() -> String {
-    String::from("locksidian.db")
 }
 
 /// Method used to establish a connection to the persistence context of the application, based on
