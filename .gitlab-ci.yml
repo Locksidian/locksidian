@@ -17,7 +17,8 @@ coverage:
   image: registry.gitlab.com/locksidian/locksidian-ci:feature-29
   script:
     - cargo test --no-run
-    - kcov --exclude-pattern=/.cargo,/usr/lib target/cov target/debug/locksidian-*
+    - rm target/debug/locksidian-*.d &&\
+    - kcov --exclude-pattern="/.cargo,/usr/lib" --verify target/cov target/debug/locksidian-*
     - mv target/cov coverage
   artifacts:
     paths:
