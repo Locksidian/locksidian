@@ -1,7 +1,5 @@
 //! Peer Domain module.
 
-#![allow(dead_code)]
-
 use error::*;
 use sec::rsa::Rsa;
 use sec::hex::*;

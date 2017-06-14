@@ -1,5 +1,8 @@
 //! Blockchain networking module.
 
+#[macro_use]
+mod macros;
+
 mod p2p;
 mod http;
 mod segregation;

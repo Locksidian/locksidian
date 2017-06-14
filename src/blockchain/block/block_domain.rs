@@ -11,7 +11,8 @@ use sec::hex::*;
 use blockchain::get_current_timestamp;
 use blockchain::algorithm::ProofOfWork;
 use blockchain::identity::Identity;
-use blockchain::block::{BlockEntity, BlockRepository};
+
+use super::*;
 
 pub struct Block {
 	// Block data
@@ -43,42 +44,36 @@ impl Block {
 		
 		// Compute data hash and browse the blockchain in order to find a possible duplicate
 		let data_hash = sha512(data.as_bytes());
+		Block::assert_document_uniqueness(data_hash.as_ref(), &repository)?;
+		
+		// Create a partial `Block` structure used to calculate the PoW algorithm
+		let signature = author.key().sign(data.as_bytes())?;
+		let head = repository.get_head().unwrap_or(BlockEntity::empty());
+		
+		let mut block = Block {
+			data: data,
+			
+			data_hash: data_hash,
+			signature: signature,
+			timestamp: timestamp,
+			nonce: 0,
+			previous: head.hash,
+			
+			hash: String::new(),
+			height: (head.height + 1) as u64,
+			next: String::new(),
+			author: author.hash(),
+			received_at: received_at,
+			received_from: author.hash()
+		};
 
-		match repository.get_by_data_hash(&data_hash) {
-			Some(entity) => Err(LocksidianError::new(format!("Document hash {} is already stored in block {}", data_hash, entity.hash))),
-			None => {
-				let received_from = author.hash();
-				let block_author = author.hash();
-				let signature = author.key().sign(data.as_bytes())?;
+		// Compute the PoW
+		let (hash, nonce) = block.compute()?;
+		block.nonce = nonce;
+		block.hash = hash;
 
-				let head = repository.get_head().unwrap_or(BlockEntity::empty());
-				
-				// Create a partial `Block` structure used to calculate the PoW algorithm
-				let mut block = Block {
-					data: data,
-					
-					data_hash: data_hash,
-					signature: signature,
-					timestamp: timestamp,
-					nonce: 0,
-					previous: head.hash,
-					
-					hash: String::new(),
-					height: (head.height + 1) as u64,
-					next: String::new(),
-					author: block_author,
-					received_at: received_at,
-					received_from: received_from
-				};
-
-				let (hash, nonce) = block.compute()?;
-				block.nonce = nonce;
-				block.hash = hash;
-
-				// Return our complete `Block` structure
-				Ok(block)
-			}
-		}
+		// Return our complete `Block` structure
+		Ok(block)
 	}
 
 	/// Adapt a `BlockEntity` into a `Block` structure, consuming its instance.
@@ -101,6 +96,86 @@ impl Block {
 				received_from: entity.received_from
 			}),
 			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	/// Create a new `Block` structure from the replication data provided by one of the network peers
+	/// through the use of a `BlockReplicationDto`.
+	pub fn replicate_from(dto: BlockReplicationDto, repository: &BlockRepository) -> LocksidianResult<Self> {
+		let replica = Block::partial_replica(dto)?;
+		let data_hash = Block::check_data_hash(&replica)?;
+		
+		Block::assert_document_uniqueness(data_hash.as_ref(), &repository)?;
+		replica.validate()?;
+		
+		Ok(replica)
+	}
+	
+	/// Create a partial `Block` replica from a `BlockReplicationDto`.
+	fn partial_replica(dto: BlockReplicationDto) -> LocksidianResult<Self> {
+		match dto.signature.from_hex() {
+			Ok(signature) => Ok(Block {
+				data: dto.data,
+				
+				data_hash: dto.data_hash,
+				signature: signature,
+				timestamp: dto.timestamp,
+				nonce: dto.nonce,
+				previous: dto.previous,
+				
+				hash: dto.hash,
+				height: dto.height,
+				next: String::new(),
+				author: dto.author,
+				received_at: get_current_timestamp(),
+				received_from: dto.received_from
+			}),
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	/// Returns an error if the recomputed data checksum does not match the stored `data_hash`.
+	fn check_data_hash(block: &Block) -> LocksidianResult<String> {
+		let recomputed_data_hash = sha512(block.data.as_bytes());
+		
+		match block.data_hash == recomputed_data_hash {
+			true => Ok(recomputed_data_hash),
+			false => Err(LocksidianError::new(String::from("Replica data_hash does not match the recomputed data checksum")))
+		}
+	}
+	
+	/// Returns an `Error` if the specified document hash does exist in the local registry.
+	fn assert_document_uniqueness(data_hash: &str, repository: &BlockRepository) -> LocksidianResult<()> {
+		match repository.get_by_data_hash(data_hash) {
+			Some(entity) => Err(LocksidianError::new(
+				format!("Document hash {} is already stored in block {}", data_hash, entity.hash)
+			)),
+			None => Ok(())
+		}
+	}
+	
+	/// Calculate the current `Block` hash.
+	fn calculate_hash(&self) -> String {
+		let pow_buffer = format!("{}{}{}{}{}", self.data_hash, self.signature.to_hex(), self.timestamp(), self.nonce, self.previous);
+		sha512(pow_buffer.as_bytes())
+	}
+	
+	/// If the provided `pow_value` (representing the decimal value of `pow_hash`) is lower than the
+	/// Proof of Work `target`, a tuple containing the PoW hash and nonce is returned.
+	fn is_pow_valid(&self, pow_hash: String, pow_value: BigUint, target: &BigUint) -> Option<(String, u32)> {
+		match pow_value < *target {
+			true => Some((pow_hash, self.nonce)),
+			false => None
+		}
+	}
+	
+	/// Validate the PoW computation for the current `Block` instance.
+	fn validate_with_target(&self, target: &BigUint) -> LocksidianResult<Option<(String, u32)>> {
+		let hash = self.calculate_hash();
+		
+		match BigUint::parse_bytes(hash.as_bytes(), 16) {
+			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
+			None => return Err(LocksidianError::new(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash)))
 		}
 	}
 
@@ -163,29 +238,6 @@ impl Block {
 	pub fn received_from(&self) -> String {
 		self.received_from.clone()
 	}
-
-	fn calculate_hash(&self) -> String {
-		let pow_buffer = format!("{}{}{}{}{}", self.data_hash, self.signature.to_hex(), self.timestamp(), self.nonce, self.previous);
-		sha512(pow_buffer.as_bytes())
-	}
-
-	fn is_pow_valid(&self, pow_hash: String, pow_value: BigUint, target: &BigUint) -> Option<(String, u32)> {
-		if pow_value < *target {
-			Some((pow_hash, self.nonce))
-		}
-		else {
-			None
-		}
-	}
-
-	fn validate_with_target(&self, target: &BigUint) -> LocksidianResult<Option<(String, u32)>> {
-		let hash = self.calculate_hash();
-		match BigUint::parse_bytes(hash.as_bytes(), 16) {
-			Some(pow_value) => Ok(self.is_pow_valid(hash, pow_value, target)),
-			None => return Err(LocksidianError::new(format!("Unable to compute block's PoW: {} could not be converted to BigUint", hash)))
-		}
-	}
-
 }
 
 impl ProofOfWork for Block {
@@ -324,22 +376,18 @@ mod test {
 	#[test]
 	fn block_pow_should_validate_when_target_is_valid() {
 		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-
 		block.nonce = 12623;
 
 		let result = block.validate().unwrap();
-
 		assert_eq!(Some((block.calculate_hash(), block.nonce)), result);
 	}
 
 	#[test]
 	fn block_pow_should_not_validate_when_nonce_is_not_ok() {
 		let mut block = mock_block_data(r#"{"message": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}"#);
-
 		block.nonce = 12622;
 
 		let result = block.validate().unwrap();
-
 		assert_eq!(None, result);
 	}
 }
