@@ -5,6 +5,7 @@
 use sec::hex::ToHex;
 
 use blockchain::block::Block;
+use blockchain::identity::Identity;
 
 /// Simple `BlockDto` representing the entire `Block` structure.
 ///
@@ -14,20 +15,20 @@ use blockchain::block::Block;
 	Serialize, Deserialize
 )]
 pub struct BlockDto {
-    data: String,
-
-    data_hash: String,
-    signature: String,
-    timestamp: u64,
-    nonce: u32,
-    previous: String,
-
-    hash: String,
-    height: u64,
-    next: String,
-    author: String,
-    received_at: u64,
-    received_from: String
+    pub data: String,
+    
+    pub data_hash: String,
+    pub signature: String,
+    pub timestamp: u64,
+    pub nonce: u32,
+    pub previous: String,
+    
+    pub hash: String,
+    pub height: u64,
+    pub next: String,
+    pub author: String,
+    pub received_at: u64,
+    pub received_from: String
 }
 
 impl BlockDto {
@@ -62,23 +63,24 @@ impl BlockDto {
 	Serialize, Deserialize
 )]
 pub struct BlockReplicationDto {
-    data: String,
+    pub data: String,
 
-    data_hash: String,
-    signature: String,
-    timestamp: u64,
-    nonce: u32,
-    previous: String,
+    pub data_hash: String,
+    pub signature: String,
+    pub timestamp: u64,
+    pub nonce: u32,
+    pub previous: String,
 
-    hash: String,
-    height: u64,
-    author: String
+    pub hash: String,
+    pub height: u64,
+    pub author: String,
+    pub received_from: String
 }
 
 impl BlockReplicationDto {
 
     /// Instantiate a new `BlockReplicationDto` based on the given `Block`.
-    pub fn new(block: &Block) -> Self {
+    pub fn new(block: &Block, current_identity: &Identity) -> Self {
         BlockReplicationDto {
             data: block.data(),
 
@@ -90,7 +92,8 @@ impl BlockReplicationDto {
 
             hash: block.hash(),
             height: block.height(),
-            author: block.author()
+            author: block.author(),
+            received_from: current_identity.hash()
         }
     }
 }

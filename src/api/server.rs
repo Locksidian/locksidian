@@ -17,6 +17,7 @@ use blockchain::identity::identity_cli::get_active_identity;
 
 use blockchain::network::*;
 use blockchain::peer::*;
+use blockchain::block::BlockRepository;
 
 /// HTTP server exposing the `Locksidian` REST API.
 pub struct Server {
@@ -55,7 +56,6 @@ impl Server {
             chain.link_before(ProtectedMiddleware::new());
         }
 
-        chain.link_before(ClientMiddleware::new());
         chain.link_after(HeadersMiddleware);
 
         Ok(chain)
@@ -117,10 +117,16 @@ impl Server {
 				let client = HttpClient::from_address(entrypoint.clone());
 				let repository = PeerRepository::new(&connection);
 				
-				self.network_registration(&client, &identity, &repository)?;
-				self.register_network_peers(&client, &repository)?;
+				let peer = self.network_registration(&client, &identity, &repository)?;
+				let client = HttpClient::from_peer(&peer);
 				
-				println!("Successfully registered onto the network.");
+				self.register_network_peers(&client, &repository)?;
+				println!("Successfully registered onto the network. Entrypoint is: {}", self.listen_addr);
+				
+				print!("Syncing the chain...");
+				self.entrypoint_sync(&client, &connection)?;
+				println!(" Done!");
+				
 			},
 			None => println!("Standalone network mode. Entrypoint is: {}", self.listen_addr)
 		}
@@ -129,12 +135,15 @@ impl Server {
 	}
 	
 	/// Try to establish a connection and register our instance with the network entrypoint.
-	fn network_registration<T: Client>(&self, client: &T, identity: &Identity, repository: &PeerRepository) -> LocksidianResult<()> {
+	fn network_registration<T: Client>(&self, client: &T, identity: &Identity, repository: &PeerRepository) -> LocksidianResult<Peer> {
 		let key = identity.public_key_to_hex()?;
 		let peer = Peer::new(key, self.listen_addr())?;
 		
 		match client.register(&peer) {
-			Ok(mut peer) => peer_cli::register(&mut peer, &repository, self.listen_addr.as_ref()),
+			Ok(mut peer) => {
+				peer_cli::register(&mut peer, &repository, self.listen_addr.as_ref())?;
+				Ok(peer)
+			},
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
@@ -143,6 +152,16 @@ impl Server {
 	fn register_network_peers<T: Client>(&self, client: &T, repository: &PeerRepository) -> LocksidianResult<()> {
 		let mut peers = client.get_peers()?;
 		peer_cli::register_batch(&mut peers, &repository, self.listen_addr.as_ref())
+	}
+	
+	/// After joining the P2P network, sync the blockchain state of the entrypoint
+	fn entrypoint_sync<T: Client>(&self, client: &T, connection: &SqliteConnection) -> LocksidianResult<()> {
+		let repository = BlockRepository::new(&connection);
+		
+		match client.sync(None, &repository) {
+			Ok(_) => Ok(()),
+			Err(_) => Ok(())
+		}
 	}
 
 	/// `listen_addr` getter.

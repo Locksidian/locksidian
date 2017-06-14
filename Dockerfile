@@ -15,4 +15,4 @@ VOLUME /root/.locksidian
 
 WORKDIR /app
 
-ENTRYPOINT ["/app/locksidian", "-d", "0.0.0.0:8080"]
+ENTRYPOINT ["/app/locksidian"]
