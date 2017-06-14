@@ -157,7 +157,11 @@ impl Server {
 	/// After joining the P2P network, sync the blockchain state of the entrypoint
 	fn entrypoint_sync<T: Client>(&self, client: &T, connection: &SqliteConnection) -> LocksidianResult<()> {
 		let repository = BlockRepository::new(&connection);
-		client.sync(None, &repository)
+		
+		match client.sync(None, &repository) {
+			Ok(_) => Ok(()),
+			Err(_) => Ok(())
+		}
 	}
 
 	/// `listen_addr` getter.
