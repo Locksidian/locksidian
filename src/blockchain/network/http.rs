@@ -4,34 +4,38 @@ use error::*;
 use std::io::Read;
 use hyper::Client;
 
+use persistence::prelude::*;
+
 use hyper::header::{Headers, ContentType};
 use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
 use blockchain::network::p2p;
 use blockchain::peer::{Peer, PeerDto};
-use blockchain::block::{Block, BlockReplicationDto};
+use blockchain::block::*;
 use blockchain::identity::Identity;
 
 pub struct HttpClient {
     client: Client,
-    address: String
+    address: String,
+	identity: Option<String>
 }
 
 impl HttpClient {
 
-    pub fn new(client: Client, address: String) -> Self {
+    pub fn new(client: Client, address: String, identity: Option<String>) -> Self {
         HttpClient {
             client: client,
-            address: format!("http://{}", address)
+            address: format!("http://{}", address),
+	        identity: identity
         }
     }
 
     pub fn from_address(address: String) -> Self {
-        HttpClient::new(HttpClient::default_client(), address)
+        HttpClient::new(HttpClient::default_client(), address, None)
     }
 	
     pub fn from_peer(peer: &Peer) -> Self {
-        HttpClient::new(HttpClient::default_client(), peer.address())
+        HttpClient::new(HttpClient::default_client(), peer.address(), Some(peer.identity()))
     }
 
     fn default_client() -> Client {
@@ -51,6 +55,33 @@ impl HttpClient {
 	fn to_json<T: ?Sized>(&self, value: &T) -> LocksidianResult<String> where T: ::serde::Serialize {
 		match ::serde_json::to_string(value) {
 			Ok(json) => Ok(json),
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	fn get_head(&self) -> LocksidianResult<String> {
+		let url = format!("{}/blocks", self.address.clone());
+		
+		match self.client.get(&url).send() {
+			Ok(mut res) => match client_body!(res) {
+				Ok(json) => Ok(String::from(wat!(json.head as &str))),
+				Err(err) => Err(LocksidianError::from_err(err))
+			},
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
+	
+	fn get_block(&self, hash: String) -> LocksidianResult<Block> {
+		let url = format!("{}/blocks/{}", self.address.clone(), hash);
+		
+		match self.client.get(&url).send() {
+			Ok(mut res) => match client_body!(res, BlockDto) {
+				Ok(dto) => match Block::from_dto(dto, self.identity.as_ref()) {
+					Ok(block) => Ok(block),
+					Err(err) => Err(LocksidianError::from_err(err))
+				},
+				Err(err) => Err(LocksidianError::from_err(err))
+			},
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
 	}
@@ -110,6 +141,35 @@ impl p2p::Client for HttpClient {
 		}
 		
 		Ok(())
+	}
+	
+	fn sync(&self, hash: Option<String>, repository: &BlockRepository) -> LocksidianResult<()> {
+		match hash {
+			Some(hash) => {
+				let block = self.get_block(hash)?;
+				block.integrity_check(&repository)?;
+				
+				let mut entity = BlockEntity::new(&block);
+				match repository.get(&block.previous()) {
+					Some(mut previous) => {
+						repository.save_next(&mut entity, &mut previous)?;
+						Ok(())
+					},
+					None => {
+						repository.save(&entity)?;
+						
+						match block.previous().is_empty() {
+							true => Ok(()),
+							false => self.sync(Some(block.previous()), &repository)
+						}
+					}
+				}
+			},
+			None => {
+				let head = self.get_head()?;
+				self.sync(Some(head), &repository)
+			}
+		}
 	}
 }
 

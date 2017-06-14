@@ -3,7 +3,7 @@
 use error::*;
 
 use blockchain::peer::Peer;
-use blockchain::block::Block;
+use blockchain::block::{Block, BlockRepository};
 use blockchain::identity::Identity;
 
 /// Peer-to-Peer client trait definition.
@@ -20,4 +20,8 @@ pub trait Client {
     
     /// Propagate the `Block` through a list of `Peer`s.
     fn propagate(block: &Block, identity: &Identity, peers: Vec<Peer>) -> LocksidianResult<()>;
+    
+    /// Sync down the blockchain from the provided `Block` hash.
+    /// If `None` is specified, sync the blockchain from its `HEAD`.
+    fn sync(&self, hash: Option<String>, repository: &BlockRepository) -> LocksidianResult<()>;
 }

@@ -31,7 +31,9 @@ pub fn store_document(req: &mut Request) -> IronResult<Response> {
             
                     match repository.save_head(&entity) {
                         Ok(1) => {
-                            propagate_block(&block, &*connection)?;
+	                        let peer_repository = PeerRepository::new(&*connection);
+                            propagate_block(&block, &peer_repository, &*connection)?;
+	                        
                             response!(Ok, {"block": block.hash()})
                         },
                         Ok(_) => response!(InternalServerError, {
@@ -76,7 +78,7 @@ pub fn get_block(req: &mut Request) -> IronResult<Response> {
                 Some(entity) => match Block::from_entity(entity) {
                     Ok(block) => {
                         let dto = BlockDto::new(&block);
-                        response!(Ok, {"block": dto})
+                        response!(Ok, dto)
                     },
                     Err(err) => response!(InternalServerError, {"error": err.description()})
                 },
@@ -90,20 +92,30 @@ pub fn get_block(req: &mut Request) -> IronResult<Response> {
 /// Create a local copy of the `Block` if its structure is valid.
 pub fn replicate_block(req: &mut Request) -> IronResult<Response> {
     let connection = req.get_connection()?;
-    let repository = BlockRepository::new(&*connection);
+    let block_repository = BlockRepository::new(&*connection);
+	let peer_repository = PeerRepository::new(&*connection);
     
-    let mut block = body_to_block(req, &repository)?;
-    save_replicated_block(&mut block, &repository)?;
-    
-    propagate_block(&block, &*connection)?;
+    let mut block = body_to_block(req, &block_repository)?;
+    let should_sync = save_replicated_block(&mut block, &block_repository)?;
+    propagate_block(&block, &peer_repository, &*connection)?;
+	
+	if should_sync {
+		match peer_repository.get(&block.received_from()) {
+			Some(entity) => match Peer::from_entity(&entity) {
+				Ok(peer) => HttpClient::from_peer(&peer).sync(Some(block.previous()), &block_repository).unwrap_or(()),
+				Err(_) => ()
+			},
+			None => ()
+		};
+	}
+	
     response!(Ok, {})
 }
 
 /// Propagate a `Block` to all of our `Peer`s.
-fn propagate_block(block: &Block, connection: &SqliteConnection) -> IronResult<()> {
+fn propagate_block(block: &Block, repository: &PeerRepository, connection: &SqliteConnection) -> IronResult<()> {
     let identity = get_active_identity(&*connection)?;
     
-    let repository = PeerRepository::new(&connection);
     match repository.get_all() {
         Some(entities) => {
             let peers: Vec<Peer> = entities.iter()
@@ -121,16 +133,20 @@ fn propagate_block(block: &Block, connection: &SqliteConnection) -> IronResult<(
     }
 }
 
-fn save_replicated_block(block: &mut Block, repository: &BlockRepository) -> IronResult<()> {
+fn save_replicated_block(block: &mut Block, repository: &BlockRepository) -> IronResult<bool> {
     let mut entity = BlockEntity::new(&block);
+	let mut should_sync = false;
     
     let save = match repository.get(&block.previous()) {
         Some(mut previous) => repository.save_next(&mut entity, &mut previous),
-        None => repository.save(&entity)
+        None => {
+	        should_sync = true;
+	        repository.save(&entity)
+        }
     };
     
     match save {
-        Ok(1) => Ok(()),
+        Ok(1) => Ok(should_sync),
         Ok(_) => error!(InternalServerError, {
             "warning": "An unexpected number of rows were inserted in the registry"
         }),
