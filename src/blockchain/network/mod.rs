@@ -3,9 +3,13 @@
 #[macro_use]
 mod macros;
 
+mod public;
 mod p2p;
 mod http;
-mod segregation;
 
+pub use self::public::*;
 pub use self::p2p::Client;
 pub use self::http::HttpClient;
+
+pub mod upnp;
+mod segregation;
