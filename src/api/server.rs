@@ -117,6 +117,10 @@ impl Server {
 				let client = HttpClient::from_address(entrypoint.clone());
 				let repository = PeerRepository::new(&connection);
 				
+				if !client.check_version()? {
+					return Err(LocksidianError::new(format!("Entrypoint version is incompatible with current node's version (v{})", ::VERSION)));
+				}
+				
 				let peer = self.network_registration(&client, &identity, &repository)?;
 				let client = HttpClient::from_peer(&peer);
 				
@@ -126,7 +130,6 @@ impl Server {
 				print!("Syncing the chain...");
 				self.entrypoint_sync(&client, &connection)?;
 				println!(" Done!");
-				
 			},
 			None => println!("Standalone network mode. Entrypoint is: {}", self.listen_addr)
 		}
