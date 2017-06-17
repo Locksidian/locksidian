@@ -8,6 +8,9 @@ use blockchain::identity::Identity;
 
 /// Peer-to-Peer client trait definition.
 pub trait Client {
+    
+    /// Check that the `Peer`'s version match this node's version.
+    fn check_version(&self) -> LocksidianResult<bool>;
 
     /// Register the specified `Identity` on this Peer-to-Peer client.
     fn register(&self, peer: &Peer) -> LocksidianResult<Peer>;

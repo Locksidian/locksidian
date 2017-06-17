@@ -13,6 +13,7 @@ use blockchain::network::p2p;
 use blockchain::peer::{Peer, PeerDto};
 use blockchain::block::*;
 use blockchain::identity::Identity;
+use blockchain::version::Version;
 
 pub struct HttpClient {
     client: Client,
@@ -88,6 +89,18 @@ impl HttpClient {
 }
 
 impl p2p::Client for HttpClient {
+	
+	fn check_version(&self) -> LocksidianResult<bool> {
+		let url = format!("{}", self.address.clone());
+		
+		match self.client.get(&url).send() {
+			Ok(mut res) => match client_body!(res, Version) {
+				Ok(version) => Ok(version.version() == ::VERSION),
+				Err(err) => Err(LocksidianError::from_err(err))
+			},
+			Err(err) => Err(LocksidianError::from_err(err))
+		}
+	}
     
     fn register(&self, peer: &Peer) -> LocksidianResult<Peer> {
         let url = format!("{}/peers/register", self.address.clone());

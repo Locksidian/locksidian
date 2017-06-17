@@ -8,15 +8,13 @@ use blockchain::identity::*;
 /// Collect all the configured node identities into a single JSON payload of the form:
 ///
 /// ```json
-/// {
-/// 	"identities": [
-/// 		{
-/// 			"hash": "...",
-/// 			"public_key": "..."
-/// 		},
-/// 		...
-/// 	]
-/// }
+/// [
+/// 	{
+/// 		"hash": "...",
+/// 		"public_key": "..."
+/// 	},
+/// 	...
+/// ]
 /// ```
 ///
 /// *Note*: only the **public key** can be transferred through a DTO, in order to avoid the leak
@@ -36,7 +34,7 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 				.map(|dto| dto.unwrap())
 				.collect();
 			
-			response!(Ok, {"identities": identities})
+			response!(Ok, identities)
 		},
 		None => response!(NoContent, {})
 	}
@@ -46,10 +44,8 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 ///
 /// ```json
 /// {
-/// 	"identity": {
-/// 		"hash": "...",
-/// 		"public_key": "..."
-/// 	}
+/// 	"hash": "...",
+/// 	"public_key": "..."
 /// }
 /// ```
 pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
@@ -57,7 +53,7 @@ pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 	
 	match identity_cli::get_active_identity(&*connection) {
 		Ok(identity) => match IdentityDto::new(&identity) {
-			Ok(dto) => response!(Ok, {"identity": dto}),
+			Ok(dto) => response!(Ok, dto),
 			Err(err) => response!(InternalServerError, {"error": err.description()})
 		},
 		Err(_) => response!(NoContent, {})
@@ -68,10 +64,8 @@ pub fn get_active_identity(req: &mut Request) -> IronResult<Response> {
 ///
 /// ```json
 /// {
-/// 	"identity": {
-/// 		"hash": "{hash}",
-/// 		"public_key": "..."
-/// 	}
+/// 	"hash": "{hash}",
+/// 	"public_key": "..."
 /// }
 /// ```
 pub fn get_identity_by_hash(req: &mut Request) -> IronResult<Response> {
@@ -83,7 +77,7 @@ pub fn get_identity_by_hash(req: &mut Request) -> IronResult<Response> {
 				match repository.get(&String::from(hash)) {
 					Some(entity) => match entity.to_identity() {
 						Ok(identity) => match IdentityDto::new(&identity) {
-							Ok(dto) => response!(Ok, {"identity": dto}),
+							Ok(dto) => response!(Ok, dto),
 							Err(err) => response!(InternalServerError, {"error": err.description()})
 						},
 						Err(err) => response!(InternalServerError, {"error": err.description()})
