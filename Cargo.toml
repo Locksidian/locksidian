@@ -1,6 +1,6 @@
 [package]
 name = "locksidian"
-version = "0.1.2"
+version = "0.1.3"
 description = "The one vault your data really need"
 authors = ["Valentin Fries <contact@fries.io>", "Aurélien Duval <aurelien.duval6@gmail.com>"]
 
