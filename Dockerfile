@@ -10,9 +10,11 @@ RUN cd /src && \
     chmod +x /app/locksidian && \
     rm -rf /src
 
+RUN /app/locksidian --identity $(/app/locksidian --identity-new 4096)
+
 EXPOSE 8080
 VOLUME /root/.locksidian
 
 WORKDIR /app
 
-ENTRYPOINT ["/app/locksidian"]
+ENTRYPOINT /app/locksidian -d 0.0.0.0:8080
