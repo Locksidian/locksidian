@@ -1,10 +1,16 @@
-version: "2"
-services:
-  locksidian:
-    build: .
-    volumes:
-      - .:/root/.locksidian/
-    ports:
-      - "8080:8080"
-    working_dir: /app
-    command: /app/locksidian -d 0.0.0.0:8080
+locksidian-primary:
+  build: .
+  ports:
+    - 8080:8080
+  working_dir: /app
+  tty: true
+
+locksidian-node:
+  image: locksidian_locksidian-primary
+  ports:
+    - 8080
+  links:
+    - locksidian-primary
+  working_dir: /app
+  tty: true
+  entrypoint: /bin/bash -c "/app/locksidian -d 0.0.0.0:8080 -e $${EXTERNAL_NODE:-locksidian-primary:8080} || /app/locksidian --identity $$(/app/locksidian --identity-new 4096) -d 0.0.0.0:8080 -e $${EXTERNAL_NODE:-locksidian-primary:8080}"

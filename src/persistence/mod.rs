@@ -54,6 +54,7 @@ pub fn get_connection(database_path: String) -> LocksidianResult<SqliteConnectio
 /// Checks that the specified path exists on the file system. If it is not the case, create the
 /// parent directory structure.
 pub fn check_database_path(path: &Path) {
+    trace!("Checking database existence");
     if !path.exists() {
         match path.parent() {
             Some(parent) => fs::create_dir_all(parent).unwrap(), //TODO: Validate this `unwrap()` usage.
@@ -64,6 +65,7 @@ pub fn check_database_path(path: &Path) {
 
 /// Execute the setup script at startup in order to initialize the database schemas.
 pub fn setup_database(connection: &SqliteConnection) -> LocksidianResult<()> {
+    info!("Setting database up");
     match connection.execute(r#"
         CREATE TABLE IF NOT EXISTS `identities` (
             `hash` TEXT PRIMARY KEY NOT NULL,

@@ -26,7 +26,7 @@ fn get_blocks_metric(connection: &SqliteConnection) -> IronResult<Metric<i64>> {
     
     match repository.count() {
         Ok(count) => Ok(Metric::new("Blocks", count)),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }
 
@@ -35,7 +35,7 @@ fn get_peers_metric(connection: &SqliteConnection) -> IronResult<Metric<i64>> {
     
     match repository.count() {
         Ok(count) => Ok(Metric::new("Peers", count)),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }
 
@@ -44,6 +44,6 @@ fn get_identities_metric(connection: &SqliteConnection) -> IronResult<Metric<i64
     
     match repository.count() {
         Ok(count) => Ok(Metric::new("Identities", count)),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }

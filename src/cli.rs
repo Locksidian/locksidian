@@ -3,6 +3,8 @@
 //! Handle the command line arguments provided by the `opts` module and the environment variables
 //! defined in the system/Docker container.
 
+use mowl;
+use log;
 use error::*;
 
 use getopts::Matches;
@@ -12,10 +14,23 @@ use api;
 use blockchain::identity::identity_cli;
 
 pub fn handle(matches: Matches) -> LocksidianResult<String> {
+
+    if matches.opt_present("trace") {
+        mowl::init_with_level(log::LogLevel::Trace).unwrap();
+        info!("Logging in trace mode");
+    }
+    else if matches.opt_present("verbose") {
+        mowl::init_with_level(log::LogLevel::Debug).unwrap();
+        info!("Logging using verbose mode");
+    }
+    else {
+        mowl::init_with_level(log::LogLevel::Info).unwrap();
+    }
 	// Generic options
     if matches.opt_present("help") {
         Ok(opts::usage())
     }
+
     else if matches.opt_present("version") {
         Ok(opts::version())
     }

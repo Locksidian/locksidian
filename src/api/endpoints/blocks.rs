@@ -129,7 +129,7 @@ fn propagate_block(block: &Block, repository: &PeerRepository, connection: &Sqli
                 Err(_) => Ok(())
             }
         },
-        None => error!(InternalServerError, {"error": "No peer could be found to propagate this block"})
+        None => http_error!(InternalServerError, {"error": "No peer could be found to propagate this block"})
     }
 }
 
@@ -147,17 +147,17 @@ fn save_replicated_block(block: &mut Block, repository: &BlockRepository) -> Iro
     
     match save {
         Ok(1) => Ok(should_sync),
-        Ok(_) => error!(InternalServerError, {
+        Ok(_) => http_error!(InternalServerError, {
             "warning": "An unexpected number of rows were inserted in the registry"
         }),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }
 
 fn get_active_identity(connection: &SqliteConnection) -> IronResult<Identity> {
     match identity_cli::get_active_identity(&connection) {
         Ok(identity) => Ok(identity),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }
 
@@ -166,14 +166,14 @@ fn body_to_block(req: &mut Request, repository: &BlockRepository) -> IronResult<
     
     match Block::replicate_from(dto, &repository) {
         Ok(block) => Ok(block),
-        Err(err) => error!(BadRequest, {"error": err.description()})
+        Err(err) => http_error!(BadRequest, {"error": err.description()})
     }
 }
 
 fn body_to_dto(req: &mut Request) -> IronResult<BlockReplicationDto> {
     match body!(req, BlockReplicationDto) {
         Ok(Some(dto)) => Ok(dto),
-        Ok(None) => error!(BadRequest, {"error": "No content"}),
-        Err(err) => error!(BadRequest, {"error": err.description()})
+        Ok(None) => http_error!(BadRequest, {"error": "No content"}),
+        Err(err) => http_error!(BadRequest, {"error": err.description()})
     }
 }
