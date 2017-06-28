@@ -1,4 +1,4 @@
-FROM locksidian-ci:lastest
+FROM registry.gitlab.com/locksidian/locksidian-ci:master
 MAINTAINER Valentin Fries <contact@fries.io>
 
 COPY . /src
