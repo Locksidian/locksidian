@@ -128,14 +128,6 @@ impl Server {
 				let client = HttpClient::from_address(entrypoint.clone());
 				let repository = PeerRepository::new(&connection);
 				
-				if !client.check_version()? {
-					return Err(LocksidianError::new(format!(
-						"Entrypoint version v{} is incompatible with current node's version v{}",
-						client.get_peer_version().unwrap(),
-						::VERSION
-					)));
-				}
-				
 				let peer = self.network_registration(&client, &identity, &repository)?;
 				let client = HttpClient::from_peer(&peer);
 				

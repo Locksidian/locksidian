@@ -46,7 +46,7 @@ pub fn purge(req: &mut Request) -> IronResult<Response> {
 				match client.check_version() {
 					Ok(true) => (),
 					_ => {
-						warn!("Purging remote peer {} ({})...", peer.identity(), peer.address());
+						info!("Purging remote peer {} ({})...", peer.identity(), peer.address());
 						
 						match PeerEntity::new(&peer) {
 							Ok(entity) => match repository.delete(&entity) {
@@ -68,23 +68,9 @@ pub fn purge(req: &mut Request) -> IronResult<Response> {
 pub fn register(req: &mut Request) -> IronResult<Response> {
     let mut peer = body_to_peer(req)?;
 	
-	let client = HttpClient::from_peer(&peer);
-	match client.check_version() {
-		Ok(true) => (),
-		Ok(false) => {
-			let error = format!("Connection refused: required version is {}", ::VERSION);
-			
-			warn!("Remote peer {} tried to connect using an incompatible version", peer.address());
-			return http_response!(BadRequest, {"error": error});
-		},
-		Err(err) => return http_response!(InternalServerError, {"error": err.description()})
-	}
-	
     let connection = req.get_connection()?;
     let repository = PeerRepository::new(&*connection);
     let address = req.get_node_address()?;
-
-    info!("Attempting to register {} peer at {}", peer.identity(), peer.address());
 
     match peer_cli::register(&mut peer, &repository, address.as_ref()) {
         Ok(_) => match peer_cli::current_identity_as_peer(&*connection, address) {
