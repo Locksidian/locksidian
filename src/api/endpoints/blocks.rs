@@ -34,19 +34,19 @@ pub fn store_document(req: &mut Request) -> IronResult<Response> {
 	                        let peer_repository = PeerRepository::new(&*connection);
                             propagate_block(&block, &peer_repository, &*connection)?;
 	                        
-                            response!(Ok, {"block": block.hash()})
+                            http_response!(Ok, {"block": block.hash()})
                         },
-                        Ok(_) => response!(InternalServerError, {
+                        Ok(_) => http_response!(InternalServerError, {
                                     "warning": "An unexpected number of rows were inserted in the registry"
                                 }),
-                        Err(err) => response!(InternalServerError, {"error": err.description()})
+                        Err(err) => http_response!(InternalServerError, {"error": err.description()})
                     }
                 },
-                Err(err) => response!(Conflict, {"error": err.description()})
+                Err(err) => http_response!(Conflict, {"error": err.description()})
             }
         },
-        Ok(None) => response!(BadRequest, {"error": "Request body cannot be null"}),
-        Err(err) => response!(InternalServerError, {"error": err.to_string()})
+        Ok(None) => http_response!(BadRequest, {"error": "Request body cannot be null"}),
+        Err(err) => http_response!(InternalServerError, {"error": err.to_string()})
     }
 }
 
@@ -62,8 +62,8 @@ pub fn show_head(req: &mut Request) -> IronResult<Response> {
     let repository = BlockRepository::new(&*connection);
 
     match repository.get_head() {
-        Some(head) => response!(Ok, {"head": head.hash}),
-        None => response!(NoContent, {})
+        Some(head) => http_response!(Ok, {"head": head.hash}),
+        None => http_response!(NoContent, {})
     }
 }
 
@@ -78,14 +78,14 @@ pub fn get_block(req: &mut Request) -> IronResult<Response> {
                 Some(entity) => match Block::from_entity(entity) {
                     Ok(block) => {
                         let dto = BlockDto::new(&block);
-                        response!(Ok, dto)
+                        http_response!(Ok, dto)
                     },
-                    Err(err) => response!(InternalServerError, {"error": err.description()})
+                    Err(err) => http_response!(InternalServerError, {"error": err.description()})
                 },
-                None => response!(NoContent, {})
+                None => http_response!(NoContent, {})
             }
         },
-        None => response!(BadRequest, {"error": "Hash parameter cannot be empty"})
+        None => http_response!(BadRequest, {"error": "Hash parameter cannot be empty"})
     }
 }
 
@@ -109,7 +109,7 @@ pub fn replicate_block(req: &mut Request) -> IronResult<Response> {
 		};
 	}
 	
-    response!(Ok, {})
+    http_response!(Ok, {})
 }
 
 /// Propagate a `Block` to all of our `Peer`s.
@@ -129,7 +129,7 @@ fn propagate_block(block: &Block, repository: &PeerRepository, connection: &Sqli
                 Err(_) => Ok(())
             }
         },
-        None => error!(InternalServerError, {"error": "No peer could be found to propagate this block"})
+        None => http_error!(InternalServerError, {"error": "No peer could be found to propagate this block"})
     }
 }
 
@@ -147,17 +147,17 @@ fn save_replicated_block(block: &mut Block, repository: &BlockRepository) -> Iro
     
     match save {
         Ok(1) => Ok(should_sync),
-        Ok(_) => error!(InternalServerError, {
+        Ok(_) => http_error!(InternalServerError, {
             "warning": "An unexpected number of rows were inserted in the registry"
         }),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }
 
 fn get_active_identity(connection: &SqliteConnection) -> IronResult<Identity> {
     match identity_cli::get_active_identity(&connection) {
         Ok(identity) => Ok(identity),
-        Err(err) => error!(InternalServerError, {"error": err.description()})
+        Err(err) => http_error!(InternalServerError, {"error": err.description()})
     }
 }
 
@@ -166,14 +166,14 @@ fn body_to_block(req: &mut Request, repository: &BlockRepository) -> IronResult<
     
     match Block::replicate_from(dto, &repository) {
         Ok(block) => Ok(block),
-        Err(err) => error!(BadRequest, {"error": err.description()})
+        Err(err) => http_error!(BadRequest, {"error": err.description()})
     }
 }
 
 fn body_to_dto(req: &mut Request) -> IronResult<BlockReplicationDto> {
     match body!(req, BlockReplicationDto) {
         Ok(Some(dto)) => Ok(dto),
-        Ok(None) => error!(BadRequest, {"error": "No content"}),
-        Err(err) => error!(BadRequest, {"error": err.description()})
+        Ok(None) => http_error!(BadRequest, {"error": "No content"}),
+        Err(err) => http_error!(BadRequest, {"error": err.description()})
     }
 }

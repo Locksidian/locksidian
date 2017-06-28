@@ -22,9 +22,9 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 				.map(|dto| dto.unwrap())
 				.collect();
 			
-			response!(Ok, peers)
+			http_response!(Ok, peers)
 		},
-		None => response!(NoContent, {})
+		None => http_response!(NoContent, {})
 	}
 }
 
@@ -34,15 +34,29 @@ pub fn register(req: &mut Request) -> IronResult<Response> {
     let repository = PeerRepository::new(&*connection);
     let address = req.get_node_address()?;
 
+    info!("Attempting to register {} peer at {}", peer.identity(), peer.address());
+
     match peer_cli::register(&mut peer, &repository, address.as_ref()) {
         Ok(_) => match peer_cli::current_identity_as_peer(&*connection, address) {
             Ok(peer) => match PeerDto::new(&peer) {
-                Ok(dto) => response!(Ok, dto),
-                Err(err) => response!(InternalServerError, {"error": err.description()})
+                Ok(dto) => {
+                    info!("Successfully registered peer {} at {}", peer.identity(), peer.address());
+                    http_response!(Ok, dto)
+                },
+                Err(err) => {
+                    warn!("Could not create peer {} at {}", peer.identity(), peer.address());
+                    http_response!(InternalServerError, {"error": err.description()})
+                }
             },
-            Err(err) => response!(InternalServerError, {"error": err.description()})
+            Err(err) => {
+                warn!("Could not convert current identity as peer using address {}", req.get_node_address()?);
+                http_response!(InternalServerError, {"error": err.description()})
+            }
         },
-        Err(err) => response!(InternalServerError, {"error": err.description()})
+        Err(err) => {
+            warn!("Could not register peer {} at {}", peer.identity(), peer.address());
+            http_response!(InternalServerError, {"error": err.description()})
+        }
     }
 }
 
@@ -51,14 +65,14 @@ fn body_to_peer(req: &mut Request) -> IronResult<Peer> {
     
     match dto.to_peer() {
         Ok(peer) => Ok(peer),
-        Err(err) => error!(BadRequest, {"error": err.description()})
+        Err(err) => http_error!(BadRequest, {"error": err.description()})
     }
 }
 
 fn body_to_dto(req: &mut Request) -> IronResult<PeerDto> {
     match body!(req, PeerDto) {
         Ok(Some(dto)) => Ok(dto),
-        Ok(None) => error!(BadRequest, {"error": "No content"}),
-        Err(err) => error!(BadRequest, {"error": err.description()})
+        Ok(None) => http_error!(BadRequest, {"error": "No content"}),
+        Err(err) => http_error!(BadRequest, {"error": err.description()})
     }
 }

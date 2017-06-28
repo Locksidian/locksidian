@@ -15,4 +15,4 @@ VOLUME /root/.locksidian
 
 WORKDIR /app
 
-ENTRYPOINT ["/app/locksidian"]
+ENTRYPOINT /bin/bash -c "/app/locksidian -d 0.0.0.0:8080 || /app/locksidian --identity $(/app/locksidian --identity-new 4096) -d 0.0.0.0:8080"
