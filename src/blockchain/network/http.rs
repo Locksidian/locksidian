@@ -181,7 +181,7 @@ impl p2p::Client for HttpClient {
 						Ok(())
 					},
 					None => {
-                        info!("Saving ORIGIN block {}", entity.hash);
+                        info!("Adding block {}", entity.hash);
 						repository.save(&entity)?;
 						
 						match block.previous().is_empty() {

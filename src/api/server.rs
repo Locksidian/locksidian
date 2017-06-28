@@ -140,7 +140,7 @@ impl Server {
 				let client = HttpClient::from_peer(&peer);
 				
 				self.register_network_peers(&client, &repository)?;
-				info!("Successfully registered onto the network. Entrypoint is: {}", self.listen_addr);
+				info!("Successfully registered onto the network. Entrypoint is: {}", self.remote_addr);
 				
 				info!("Syncing the blockchain...");
 				self.entrypoint_sync(&client, &connection)?;
