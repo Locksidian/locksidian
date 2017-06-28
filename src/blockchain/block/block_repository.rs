@@ -137,6 +137,17 @@ impl<'pool> BlockRepository<'pool> {
 
         self.save(&entity)
     }
+    
+    /// Update the `next` field of a Block in order to link it to the new block.
+    pub fn save_next(&self, entity: &mut BlockEntity, previous: &mut BlockEntity) -> LocksidianResult<usize> {
+        if previous.next.is_empty() {
+            previous.next = entity.hash.clone();
+            self.update(&previous)?;
+        }
+        
+        entity.previous = previous.hash.clone();
+        self.save(&entity)
+    }
 }
 
 crud_repository!(blocks, BlockEntity, String, hash, BlockRepository<'pool>);

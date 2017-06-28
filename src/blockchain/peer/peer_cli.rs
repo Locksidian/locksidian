@@ -4,13 +4,17 @@ use error::*;
 use persistence::prelude::*;
 
 use blockchain::get_current_timestamp;
+use blockchain::network::*;
 use blockchain::peer::*;
 use blockchain::identity::identity_cli::get_active_identity;
 
 /// Register a batch of `Peer`s into the registry.
 pub fn register_batch(peers: &mut Vec<Peer>, repository: &PeerRepository, current_address: &str) -> LocksidianResult<()> {
     for peer in peers.iter_mut() {
-		register(peer, &repository, current_address)?;
+		match register(peer, &repository, current_address) {
+			Ok(_) => (),
+			Err(_) => ()
+		}
 	}
 	
 	Ok(())
@@ -18,6 +22,9 @@ pub fn register_batch(peers: &mut Vec<Peer>, repository: &PeerRepository, curren
 
 /// Register a `Peer` into the registry.
 pub fn register(peer: &mut Peer, repository: &PeerRepository, current_address: &str) -> LocksidianResult<()> {
+	info!("Trying to register peer {} ({})...", peer.identity(), peer.address());
+    check_peer_version(&peer)?;
+    
     match peer.address().eq(current_address) {
         true => Ok(()),
         false => {
@@ -29,6 +36,17 @@ pub fn register(peer: &mut Peer, repository: &PeerRepository, current_address: &
                 None => register_new_peer(&peer, &repository)
             }
         }
+    }
+}
+
+/// Check the peer version.
+pub fn check_peer_version(peer: &Peer) -> LocksidianResult<()> {
+    let client = HttpClient::from_peer(&peer);
+    
+    match client.check_version() {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(LocksidianError::new(format!("Connection refused: required version is {}", ::VERSION))),
+        Err(err) => Err(LocksidianError::from_err(err))
     }
 }
 

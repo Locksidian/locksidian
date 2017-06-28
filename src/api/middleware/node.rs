@@ -34,7 +34,7 @@ impl<'a, 'b> NodeExtractor for Request<'a, 'b> {
     fn get_node_address(&self) -> IronResult<String> {
         match self.extensions.get::<NodeMiddleware>() {
             Some(address) => Ok(address.clone()),
-            None => error!(InternalServerError, "No node address is embedded in this request")
+            None => http_error!(InternalServerError, "No node address is embedded in this request")
         }
     }
 }

@@ -2,6 +2,7 @@
 
 mod algorithm;
 
+pub mod version;
 pub mod network;
 pub mod identity;
 pub mod block;

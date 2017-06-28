@@ -361,6 +361,29 @@
 //! succession of blocks respectively linked by their `previous` and `next` fields, that lie between
 //! the `HEAD` and `ORIGIN` blocks.
 
+// Custom compiler lint checks
+#![forbid(
+    exceeding_bitshifts, mutable_transmutes, no_mangle_const_items, unknown_crate_types, warnings
+)]
+#![deny(
+    deprecated, improper_ctypes, missing_docs,
+    non_shorthand_field_patterns, overflowing_literals, plugin_as_library,
+    private_no_mangle_fns, private_no_mangle_statics, stable_features,
+    unconditional_recursion, unknown_lints, unsafe_code, unused, unused_allocation,
+    unused_attributes, unused_comparisons, unused_features, unused_parens, while_true
+)]
+#![warn(
+    trivial_casts, trivial_numeric_casts, unused_import_braces,
+    /*unused_extern_crates, unused_qualifications, unused_results*/
+)]
+
+// Documentation configuration
+#![doc(
+    html_logo_url = "https://gitlab.com/uploads/system/group/avatar/1167727/Logo4-borderless.png",
+    html_favicon_url = "https://gitlab.com/uploads/system/group/avatar/1167727/Logo4-borderless.png",
+    html_root_url = "http://locksidian.fries.io"
+)]
+
 // Third-party dependencies
 extern crate getopts;
 extern crate time;
@@ -377,8 +400,12 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate serde_wat;
 
 extern crate hyper;
+extern crate igd;
+extern crate ipnetwork;
 
 #[macro_use(router)]
 extern crate router;
@@ -386,12 +413,14 @@ extern crate iron;
 extern crate bodyparser;
 extern crate iron_test;
 
-extern crate ipnetwork;
-
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
+
+#[macro_use]
+extern crate log;
+extern crate mowl;
 
 extern crate r2d2;
 extern crate r2d2_diesel;
@@ -433,7 +462,7 @@ fn main() {
     match setup_registry() {
         Ok(()) => (),
         Err(err) => {
-            println!("{}", err.description());
+            error!("{}", err.description());
             exit(EXIT_FAILURE);
         }
     }
@@ -445,7 +474,7 @@ fn main() {
                 exit(EXIT_SUCCESS);
             },
             Err(err) => {
-                println!("{}", err.description());
+                error!("{}", err.description());
                 exit(EXIT_FAILURE);
             }
         },

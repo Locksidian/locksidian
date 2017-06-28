@@ -9,18 +9,22 @@ use getopts::{Options, Matches};
 
 fn build_opts() -> Options {
     let mut opts = Options::new();
-    opts.optflag("h", "help", "display this help menu");
-    opts.optflag("v", "version", "output version information and exit");
     
-    opts.optopt("d", "daemon", "starts the Locksidian daemon service and HTTP REST API", "LISTEN_ADDR");
-    opts.optflag("p", "protected", "starts the Locksidian daemon in protected mode. Only available when running with --daemon");
-    
-    opts.optopt("i", "identity", "switch the active node identity", "IDENTITY_HASH");
-    opts.optopt("", "identity-new", "generate a new identity (defaults to 4096 bit RSA keypair)", "BIT_SIZE");
-    opts.optopt("", "identity-import", "import the specified PEM-encoded RSA keypair as the new active identity", "PATH_TO_PEM_FILE");
-    opts.optopt("", "identity-export", "export the specified identity keypair to stdout", "IDENTITY_HASH");
-    
-    opts.optopt("e", "entrypoint", "IP address or hotsname of the network entrypoint", "ADDRESS");
+    opts.optflag("h", "help", "display this help menu")
+        .optflag("v", "version", "output version information and exit")
+        .optflag("", "verbose", "activates verbose mode")
+        .optflag("", "trace", "activates full log trace mode")
+        
+        .optopt("d", "daemon", "starts the Locksidian daemon service and HTTP REST API", "LISTEN_ADDR")
+        .optflag("p", "protected", "starts the Locksidian daemon in protected mode. Only available when running with --daemon")
+        .optflag("", "local", "starts the Locksidian daemon in local networking mode, thus deactivating the routable address gathering")
+        
+        .optopt("i", "identity", "switch the active node identity", "IDENTITY_HASH")
+        .optopt("", "identity-new", "generate a new identity (defaults to 4096 bit RSA keypair)", "BIT_SIZE")
+        .optopt("", "identity-import", "import the specified PEM-encoded RSA keypair as the new active identity", "PATH_TO_PEM_FILE")
+        .optopt("", "identity-export", "export the specified identity keypair to stdout", "IDENTITY_HASH")
+        
+        .optopt("e", "entrypoint", "IP address or hotsname of the network entrypoint", "ADDRESS");
 
     opts
 }

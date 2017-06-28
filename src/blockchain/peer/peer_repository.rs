@@ -1,7 +1,5 @@
 //! Peer Repository module.
 
-#![allow(dead_code)]
-
 use persistence::prelude::*;
 use blockchain::peer::Peer;
 
