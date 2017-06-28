@@ -6,6 +6,7 @@ use persistence::prelude::*;
 use api::middleware::node::NodeExtractor;
 
 use blockchain::peer::*;
+use blockchain::network::*;
 
 pub fn get_all(req: &mut Request) -> IronResult<Response> {
 	let connection = req.get_connection()?;
@@ -30,6 +31,19 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 
 pub fn register(req: &mut Request) -> IronResult<Response> {
     let mut peer = body_to_peer(req)?;
+	
+	let client = HttpClient::from_peer(&peer);
+	match client.check_version() {
+		Ok(true) => (),
+		Ok(false) => {
+			let error = format!("Connection refused: required version is {}", ::VERSION);
+			
+			warn!("Remote peer {} tried to connect using an incompatible version", peer.address());
+			return http_response!(BadRequest, {"error": error});
+		},
+		Err(err) => return http_response!(InternalServerError, {"error": err.description()})
+	}
+	
     let connection = req.get_connection()?;
     let repository = PeerRepository::new(&*connection);
     let address = req.get_node_address()?;

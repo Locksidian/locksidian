@@ -83,7 +83,9 @@ impl Server {
                 match self.on_start() {
 					Ok(_) => Ok(String::from("Daemon initialization successful!")),
 					Err(err) => {
+						info!("Server is stopping...");
 						self.stop(&mut listener)?;
+						
 						Err(err)
 					}
 				}

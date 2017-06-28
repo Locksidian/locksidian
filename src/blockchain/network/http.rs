@@ -6,6 +6,7 @@ use hyper::Client;
 
 use persistence::prelude::*;
 
+use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType};
 use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
@@ -115,9 +116,12 @@ impl p2p::Client for HttpClient {
 		let json = self.to_json(&dto)?;
 		
 		match self.client.post(&url).headers(self.headers()).body(&json).send() {
-			Ok(mut res) => match client_body!(res, PeerDto) {
-				Ok(dto) => dto.to_peer(),
-				Err(err) => Err(LocksidianError::from_err(err))
+			Ok(mut res) => match res.status {
+				StatusCode::Ok => match client_body!(res, PeerDto) {
+					Ok(dto) => dto.to_peer(),
+					Err(err) => Err(LocksidianError::from_err(err))
+				},
+				_ => Err(LocksidianError::new(format!("Status code is: {}; expected 200 OK", res.status)))
 			},
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
@@ -177,7 +181,7 @@ impl p2p::Client for HttpClient {
 						Ok(())
 					},
 					None => {
-                        info!("Saving initial block {}", entity.hash);
+                        info!("Saving ORIGIN block {}", entity.hash);
 						repository.save(&entity)?;
 						
 						match block.previous().is_empty() {
