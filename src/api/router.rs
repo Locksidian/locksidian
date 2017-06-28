@@ -24,6 +24,7 @@ pub fn routes() -> Router {
         // Peer API
         register: post "/peers/register" => endpoints::peers::register,
         peers_all: get "/peers" => endpoints::peers::get_all,
+        peers_purge: delete "/peers" => endpoints::peers::purge,
 
         // Metrics API
         metrics: get "/metrics" => endpoints::metrics::get_all,

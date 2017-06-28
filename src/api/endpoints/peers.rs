@@ -29,6 +29,42 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 	}
 }
 
+pub fn purge(req: &mut Request) -> IronResult<Response> {
+	let connection = req.get_connection()?;
+	let repository = PeerRepository::new(&*connection);
+	
+	match repository.get_all() {
+		Some(entities) => {
+			let peers: Vec<Peer> = entities.iter()
+				.map(|entity| Peer::from_entity(entity))
+				.filter(|peer| peer.is_ok())
+				.map(|peer| peer.unwrap())
+				.collect();
+			
+			for peer in peers {
+				let client = HttpClient::from_peer(&peer);
+				match client.check_version() {
+					Ok(true) => (),
+					_ => {
+						warn!("Purging remote peer {} ({})...", peer.identity(), peer.address());
+						
+						match PeerEntity::new(&peer) {
+							Ok(entity) => match repository.delete(&entity) {
+								Ok(_) => (),
+								Err(err) => error!("Unable to purge peer {} ({}): {}", peer.identity(), peer.address(), err.description())
+							},
+							Err(err) => error!("Unable to purge peer {} ({}): {}", peer.identity(), peer.address(), err.description())
+						}
+					}
+				};
+			}
+			
+			http_response!(Ok, {})
+		},
+		None => http_response!(Ok, {})
+	}
+}
+
 pub fn register(req: &mut Request) -> IronResult<Response> {
     let mut peer = body_to_peer(req)?;
 	
