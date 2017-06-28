@@ -6,6 +6,7 @@ use hyper::Client;
 
 use persistence::prelude::*;
 
+use hyper::status::StatusCode;
 use hyper::header::{Headers, ContentType};
 use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
@@ -13,6 +14,7 @@ use blockchain::network::p2p;
 use blockchain::peer::{Peer, PeerDto};
 use blockchain::block::*;
 use blockchain::identity::Identity;
+use blockchain::version::Version;
 
 pub struct HttpClient {
     client: Client,
@@ -88,6 +90,25 @@ impl HttpClient {
 }
 
 impl p2p::Client for HttpClient {
+	
+	fn check_version(&self) -> LocksidianResult<bool> {
+		match self.get_peer_version() {
+			Some(version) => Ok(version == ::VERSION),
+			None => Err(LocksidianError::new("No version has been found for remote peer".to_string()))
+		}
+	}
+
+	fn get_peer_version(&self) -> Option<String> {
+		let url = format!("{}", self.address.clone());
+
+		match self.client.get(&url).send() {
+			Ok(mut res) => match client_body!(res, Version) {
+				Ok(version) => Some(version.version().to_string()),
+				Err(_) => None
+			},
+			Err(_) => None
+		}
+	}
     
     fn register(&self, peer: &Peer) -> LocksidianResult<Peer> {
         let url = format!("{}/peers/register", self.address.clone());
@@ -95,9 +116,12 @@ impl p2p::Client for HttpClient {
 		let json = self.to_json(&dto)?;
 		
 		match self.client.post(&url).headers(self.headers()).body(&json).send() {
-			Ok(mut res) => match client_body!(res, PeerDto) {
-				Ok(dto) => dto.to_peer(),
-				Err(err) => Err(LocksidianError::from_err(err))
+			Ok(mut res) => match res.status {
+				StatusCode::Ok => match client_body!(res, PeerDto) {
+					Ok(dto) => dto.to_peer(),
+					Err(err) => Err(LocksidianError::from_err(err))
+				},
+				_ => Err(LocksidianError::new(format!("Status code is: {}; expected 200 OK", res.status)))
 			},
 			Err(err) => Err(LocksidianError::from_err(err))
 		}
@@ -152,10 +176,12 @@ impl p2p::Client for HttpClient {
 				let mut entity = BlockEntity::new(&block);
 				match repository.get(&block.previous()) {
 					Some(mut previous) => {
+                        info!("Adding block {}", entity.hash);
 						repository.save_next(&mut entity, &mut previous)?;
 						Ok(())
 					},
 					None => {
+                        info!("Adding block {}", entity.hash);
 						repository.save(&entity)?;
 						
 						match block.previous().is_empty() {

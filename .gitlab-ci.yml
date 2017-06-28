@@ -12,6 +12,19 @@ test:
   script:
     - cargo test
 
+coverage:
+  stage: test
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
+  script:
+    - cargo test --no-run
+    - rm target/debug/locksidian-*.d &&\
+    - kcov --exclude-pattern="/.cargo,/usr/lib" --verify target/cov target/debug/locksidian-*
+    - mkdir public
+    - mv target/cov public/coverage
+  artifacts:
+    paths:
+      - public/coverage
+
 build:
   stage: build
   image: docker:latest

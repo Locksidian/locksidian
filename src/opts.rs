@@ -12,9 +12,12 @@ fn build_opts() -> Options {
     
     opts.optflag("h", "help", "display this help menu")
         .optflag("v", "version", "output version information and exit")
+        .optflag("", "verbose", "activates verbose mode")
+        .optflag("", "trace", "activates full log trace mode")
         
         .optopt("d", "daemon", "starts the Locksidian daemon service and HTTP REST API", "LISTEN_ADDR")
         .optflag("p", "protected", "starts the Locksidian daemon in protected mode. Only available when running with --daemon")
+        .optflag("", "local", "starts the Locksidian daemon in local networking mode, thus deactivating the routable address gathering")
         
         .optopt("i", "identity", "switch the active node identity", "IDENTITY_HASH")
         .optopt("", "identity-new", "generate a new identity (defaults to 4096 bit RSA keypair)", "BIT_SIZE")

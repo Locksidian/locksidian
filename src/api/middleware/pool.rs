@@ -10,7 +10,7 @@
 //!     Ok(connection) => {
 //!         ...
 //!     },
-//!     Err(msg) => response!(InternalServerError, {"error": msg})
+//!     Err(msg) => http_response!(InternalServerError, {"error": msg})
 //! }
 //! ```
 
@@ -59,9 +59,9 @@ impl<'a, 'b> PoolExtractor for Request<'a, 'b> {
         match self.extensions.get::<PoolMiddleware>() {
             Some(pool) => match pool.get() {
                 Ok(connection) => Ok(connection),
-                Err(err) => error!(InternalServerError, {"error": err.description()})
+                Err(err) => http_error!(InternalServerError, {"error": err.description()})
             },
-            None => error!(InternalServerError, {"error": "No connection pool is embedded in this request"})
+            None => http_error!(InternalServerError, {"error": "No connection pool is embedded in this request"})
         }
     }
 }

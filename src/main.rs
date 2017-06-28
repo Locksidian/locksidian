@@ -404,6 +404,8 @@ extern crate serde_json;
 extern crate serde_wat;
 
 extern crate hyper;
+extern crate igd;
+extern crate ipnetwork;
 
 #[macro_use(router)]
 extern crate router;
@@ -411,12 +413,14 @@ extern crate iron;
 extern crate bodyparser;
 extern crate iron_test;
 
-extern crate ipnetwork;
-
 #[macro_use]
 extern crate diesel;
 #[macro_use]
 extern crate diesel_codegen;
+
+#[macro_use]
+extern crate log;
+extern crate mowl;
 
 extern crate r2d2;
 extern crate r2d2_diesel;
@@ -458,7 +462,7 @@ fn main() {
     match setup_registry() {
         Ok(()) => (),
         Err(err) => {
-            println!("{}", err.description());
+            error!("{}", err.description());
             exit(EXIT_FAILURE);
         }
     }
@@ -470,7 +474,7 @@ fn main() {
                 exit(EXIT_SUCCESS);
             },
             Err(err) => {
-                println!("{}", err.description());
+                error!("{}", err.description());
                 exit(EXIT_FAILURE);
             }
         },
