@@ -23,7 +23,7 @@ coverage:
     - mv target/cov public/coverage
   artifacts:
     paths:
-      - public/coverage
+      - public
 
 build:
   stage: build
