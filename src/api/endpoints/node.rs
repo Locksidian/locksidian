@@ -15,7 +15,7 @@ pub fn node_info(_: &mut Request) -> IronResult<Response> {
 		::AUTHORS
 	);
 	
-    response!(Ok, version)
+    http_response!(Ok, version)
 }
 
 #[cfg(test)]

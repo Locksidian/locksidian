@@ -46,7 +46,7 @@ impl ProtectedMiddleware {
     fn process_request(&self, req: &mut Request) -> IronResult<()> {
         match self.check_signature(req) {
             Ok(_) => Ok(()),
-            Err(_) => error!(Forbidden, {"error": "Forbidden"})
+            Err(_) => http_error!(Forbidden, {"error": "Forbidden"})
         }
     }
 

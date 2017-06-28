@@ -69,7 +69,7 @@ impl Server {
 
         match status {
             Ok(mut listener) => {
-                println!("Locksidian daemon listening on: {}", self.listen_addr);
+                info!("Locksidian daemon listening on: {}", self.listen_addr);
 				
                 match self.on_start() {
 					Ok(_) => Ok(String::from("Daemon initialization successful!")),
@@ -104,7 +104,7 @@ impl Server {
 	/// Gather and return the currently configured `Identity`.
 	fn setup_identity(&self, connection: &SqliteConnection) -> LocksidianResult<Identity> {
 		let identity = get_active_identity(&connection)?;
-		println!("Startup identity is: {}", identity.hash());
+		info!("Startup identity is: {}", identity.hash());
 		
 		Ok(identity)
 	}
@@ -118,20 +118,22 @@ impl Server {
 				let repository = PeerRepository::new(&connection);
 				
 				if !client.check_version()? {
-					return Err(LocksidianError::new(format!("Entrypoint version is incompatible with current node's version (v{})", ::VERSION)));
+					return Err(LocksidianError::new(
+								format!("Entrypoint version v{} is incompatible with current node's version v{}",
+										client.get_peer_version().unwrap(), ::VERSION)));
 				}
 				
 				let peer = self.network_registration(&client, &identity, &repository)?;
 				let client = HttpClient::from_peer(&peer);
 				
 				self.register_network_peers(&client, &repository)?;
-				println!("Successfully registered onto the network. Entrypoint is: {}", self.listen_addr);
+				info!("Successfully registered onto the network. Entrypoint is: {}", self.listen_addr);
 				
-				print!("Syncing the chain...");
+				info!("Syncing the blockchain...");
 				self.entrypoint_sync(&client, &connection)?;
-				println!(" Done!");
+				info!("Blockchain is up to date");
 			},
-			None => println!("Standalone network mode. Entrypoint is: {}", self.listen_addr)
+			None => info!("Standalone network mode active. Entrypoint is: {}", self.listen_addr)
 		}
 		
 		Ok(())

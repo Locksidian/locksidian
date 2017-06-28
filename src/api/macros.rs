@@ -25,19 +25,19 @@
 //! Example 1: return a simple JSON object
 //!
 //! ```rust
-//! response!(Ok, {"msg": "Hello World!"});
+//! http_response!(Ok, {"msg": "Hello World!"});
 //! ```
 //!
 //! Example 2: return a serialized structure
 //!
 //! ```rust
-//! response!(Ok, my_struct);
+//! http_response!(Ok, my_struct);
 //! ```
 //!
 //! Example 3: return a JSON object containing serialized structures.
 //!
 //! ```rust
-//! response!(Ok, {
+//! http_response!(Ok, {
 //!     "msg": "Hello World!",
 //!     "struct": my_struct
 //! });
@@ -73,49 +73,55 @@ macro_rules! body_raw {
     };
 }
 
-macro_rules! response {
+macro_rules! http_response {
     ($status:ident, $payload:tt) => {
-        if ::iron::status::$status == ::iron::status::Ok {
+        {
+            if ::iron::status::$status != ::iron::status::Ok {
+                warn!("{}: {}", ::iron::status::$status, json!($payload)["error"]);
+            }
             Ok(::iron::Response::with((
                 ::iron::status::$status,
                 json!($payload).to_string()
             )))
         }
-        else {
-            error!($status, $payload)
-        }
     };
 
     ($status:ident, $payload:ident) => {
-        if ::iron::status::$status == ::iron::status::Ok {
+        {
+            if ::iron::status::$status != ::iron::status::Ok && ::iron::status::$status != ::iron::status::NoContent {
+                warn!("{}: {}", ::iron::status::$status, $payload["error"]);
+            }
             Ok(::iron::Response::with((
                 ::iron::status::$status,
                 ::serde_json::to_string(&$payload)
             )))
-        }
-        else {
-            error!($status, $payload)
         }
     };
 }
 
-macro_rules! error {
+macro_rules! http_error {
     ($status:ident, $payload:tt) => {
-        Err(IronError::new(
-            ::error::LocksidianError::new(
-                json!($payload).to_string()
-            ),
-            ::iron::status::$status
-        ))
+        {
+            warn!("{}: {}", ::iron::status::$status, json!($payload)["error"]);
+            Err(IronError::new(
+                ::error::LocksidianError::new(
+                    json!($payload).to_string()
+                ),
+                ::iron::status::$status
+            ))
+        }
     };
 
     ($status:ident, $payload:ident) => {
-        Err(IronError::new(
-            ::error::LocksidianError::new(
-                ::serde_json::to_string(&$payload)
-            ),
-            ::iron::status::$status
-        ))
+        {
+            warn!("{}: {}", ::iron::status::$status, $payload["error"]);
+            Err(IronError::new(
+                ::error::LocksidianError::new(
+                    ::serde_json::to_string(&$payload)
+                ),
+                ::iron::status::$status
+            ))
+        }
     };
 }
 
