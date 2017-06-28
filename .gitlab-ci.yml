@@ -8,21 +8,22 @@ variables:
 
 test:
   stage: test
-  image: registry.gitlab.com/locksidian/locksidian-ci:feature-29
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
   script:
     - cargo test
 
 coverage:
   stage: test
-  image: registry.gitlab.com/locksidian/locksidian-ci:feature-29
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
   script:
     - cargo test --no-run
     - rm target/debug/locksidian-*.d &&\
     - kcov --exclude-pattern="/.cargo,/usr/lib" --verify target/cov target/debug/locksidian-*
-    - mv target/cov coverage
+    - mkdir public
+    - mv target/cov public/coverage
   artifacts:
     paths:
-      - coverage
+      - public/coverage
 
 build:
   stage: build
@@ -39,7 +40,7 @@ build:
 
 pages:
   stage: deploy
-  image: registry.gitlab.com/locksidian/locksidian-ci:feature-29
+  image: registry.gitlab.com/locksidian/locksidian-ci:master
   script:
     - cargo rustdoc -- --no-defaults --passes strip-hidden --passes collapse-docs --passes unindent-comments --passes strip-priv-imports
     - echo "<!DOCTYPE html><html><head><title>Locksidian Documentation</title><meta charset=\"UTF-8\"><meta http-equiv=\"refresh\" content=\"1; url=http://locksidian.fries.io/locksidian\"><script type=\"text/javascript\">window.location.href = \"http://locksidian.fries.io/locksidian\"</script></head><body>If you are not redirected automatically, please follow this <a href=\"http://locksidian.fries.io/locksidian\">link</a>.</body></html>" > target/doc/index.html
