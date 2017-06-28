@@ -1,7 +1,5 @@
 //! Blockchain version structure.
 
-#![allow(dead_code)]
-
 #[derive(
 	Debug, Clone,
 	Serialize, Deserialize
@@ -24,19 +22,7 @@ impl Version {
 		}
 	}
 	
-	pub fn package(&self) -> String {
-		self.package.clone()
-	}
-	
 	pub fn version(&self) -> String {
 		self.version.clone()
-	}
-	
-	pub fn description(&self) -> String {
-		self.description.clone()
-	}
-	
-	pub fn authors(&self) -> String {
-		self.description.clone()
 	}
 }

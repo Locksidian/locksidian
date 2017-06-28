@@ -404,14 +404,14 @@ extern crate serde_json;
 extern crate serde_wat;
 
 extern crate hyper;
+extern crate igd;
+extern crate ipnetwork;
 
 #[macro_use(router)]
 extern crate router;
 extern crate iron;
 extern crate bodyparser;
 extern crate iron_test;
-
-extern crate ipnetwork;
 
 #[macro_use]
 extern crate diesel;

@@ -39,8 +39,11 @@ pub fn handle(matches: Matches) -> LocksidianResult<String> {
         match matches.opt_str("daemon") {
             Some(address) => api::cli::start_daemon(
                 address,
-                matches.opt_present("protected"),
-                matches.opt_str("entrypoint")
+                api::ServerConfig {
+                    local_only: matches.opt_present("local"),
+                    protected: matches.opt_present("protected"),
+                    entrypoint: matches.opt_str("entrypoint")
+                }
             ),
             None => Err(LocksidianError::new(opts::usage()))
         }
@@ -49,8 +52,11 @@ pub fn handle(matches: Matches) -> LocksidianResult<String> {
         match opts::env("LS_DAEMON") {
             Some(address) => api::cli::start_daemon(
                 address,
-                matches.opt_present("protected"),
-                matches.opt_str("entrypoint")
+                api::ServerConfig {
+                    local_only: false,
+                    protected: matches.opt_present("protected"),
+                    entrypoint: matches.opt_str("entrypoint")
+                }
             ),
             None => Err(LocksidianError::new(opts::usage()))
         }
