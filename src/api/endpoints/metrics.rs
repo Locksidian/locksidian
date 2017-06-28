@@ -18,7 +18,7 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
         get_identities_metric(&*connection)?
     ];
     
-    response!(Ok, metrics)
+    http_response!(Ok, metrics)
 }
 
 fn get_blocks_metric(connection: &SqliteConnection) -> IronResult<Metric<i64>> {

@@ -34,19 +34,19 @@ pub fn store_document(req: &mut Request) -> IronResult<Response> {
 	                        let peer_repository = PeerRepository::new(&*connection);
                             propagate_block(&block, &peer_repository, &*connection)?;
 	                        
-                            response!(Ok, {"block": block.hash()})
+                            http_response!(Ok, {"block": block.hash()})
                         },
-                        Ok(_) => response!(InternalServerError, {
+                        Ok(_) => http_response!(InternalServerError, {
                                     "warning": "An unexpected number of rows were inserted in the registry"
                                 }),
-                        Err(err) => response!(InternalServerError, {"error": err.description()})
+                        Err(err) => http_response!(InternalServerError, {"error": err.description()})
                     }
                 },
-                Err(err) => response!(Conflict, {"error": err.description()})
+                Err(err) => http_response!(Conflict, {"error": err.description()})
             }
         },
-        Ok(None) => response!(BadRequest, {"error": "Request body cannot be null"}),
-        Err(err) => response!(InternalServerError, {"error": err.to_string()})
+        Ok(None) => http_response!(BadRequest, {"error": "Request body cannot be null"}),
+        Err(err) => http_response!(InternalServerError, {"error": err.to_string()})
     }
 }
 
@@ -62,8 +62,8 @@ pub fn show_head(req: &mut Request) -> IronResult<Response> {
     let repository = BlockRepository::new(&*connection);
 
     match repository.get_head() {
-        Some(head) => response!(Ok, {"head": head.hash}),
-        None => response!(NoContent, {})
+        Some(head) => http_response!(Ok, {"head": head.hash}),
+        None => http_response!(NoContent, {})
     }
 }
 
@@ -78,14 +78,14 @@ pub fn get_block(req: &mut Request) -> IronResult<Response> {
                 Some(entity) => match Block::from_entity(entity) {
                     Ok(block) => {
                         let dto = BlockDto::new(&block);
-                        response!(Ok, dto)
+                        http_response!(Ok, dto)
                     },
-                    Err(err) => response!(InternalServerError, {"error": err.description()})
+                    Err(err) => http_response!(InternalServerError, {"error": err.description()})
                 },
-                None => response!(NoContent, {})
+                None => http_response!(NoContent, {})
             }
         },
-        None => response!(BadRequest, {"error": "Hash parameter cannot be empty"})
+        None => http_response!(BadRequest, {"error": "Hash parameter cannot be empty"})
     }
 }
 
@@ -109,7 +109,7 @@ pub fn replicate_block(req: &mut Request) -> IronResult<Response> {
 		};
 	}
 	
-    response!(Ok, {})
+    http_response!(Ok, {})
 }
 
 /// Propagate a `Block` to all of our `Peer`s.

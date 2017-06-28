@@ -22,9 +22,9 @@ pub fn get_all(req: &mut Request) -> IronResult<Response> {
 				.map(|dto| dto.unwrap())
 				.collect();
 			
-			response!(Ok, peers)
+			http_response!(Ok, peers)
 		},
-		None => response!(NoContent, {})
+		None => http_response!(NoContent, {})
 	}
 }
 
@@ -41,21 +41,21 @@ pub fn register(req: &mut Request) -> IronResult<Response> {
             Ok(peer) => match PeerDto::new(&peer) {
                 Ok(dto) => {
                     info!("Successfully registered peer {} at {}", peer.identity(), peer.address());
-                    response!(Ok, dto)
+                    http_response!(Ok, dto)
                 },
                 Err(err) => {
                     warn!("Could not create peer {} at {}", peer.identity(), peer.address());
-                    response!(InternalServerError, {"error": err.description()})
+                    http_response!(InternalServerError, {"error": err.description()})
                 }
             },
             Err(err) => {
                 warn!("Could not convert current identity as peer using address {}", req.get_node_address()?);
-                response!(InternalServerError, {"error": err.description()})
+                http_response!(InternalServerError, {"error": err.description()})
             }
         },
         Err(err) => {
             warn!("Could not register peer {} at {}", peer.identity(), peer.address());
-            response!(InternalServerError, {"error": err.description()})
+            http_response!(InternalServerError, {"error": err.description()})
         }
     }
 }

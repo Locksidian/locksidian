@@ -10,7 +10,7 @@
 //!     Ok(connection) => {
 //!         ...
 //!     },
-//!     Err(msg) => response!(InternalServerError, {"error": msg})
+//!     Err(msg) => http_response!(InternalServerError, {"error": msg})
 //! }
 //! ```
 

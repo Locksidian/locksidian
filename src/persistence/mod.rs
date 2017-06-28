@@ -65,7 +65,6 @@ pub fn check_database_path(path: &Path) {
 
 /// Execute the setup script at startup in order to initialize the database schemas.
 pub fn setup_database(connection: &SqliteConnection) -> LocksidianResult<()> {
-    info!("Setting database up");
     match connection.execute(r#"
         CREATE TABLE IF NOT EXISTS `identities` (
             `hash` TEXT PRIMARY KEY NOT NULL,
