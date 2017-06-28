@@ -39,7 +39,6 @@ pub fn register(peer: &mut Peer, repository: &PeerRepository, current_address: &
     }
 }
 
-#[allow(dead_code)]
 /// Check the peer version.
 pub fn check_peer_version(peer: &Peer) -> LocksidianResult<()> {
     let client = HttpClient::from_peer(&peer);
