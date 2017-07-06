@@ -9,6 +9,19 @@ use blockchain::network::*;
 use blockchain::identity::*;
 use blockchain::block::*;
 
+pub fn preflight(_: &mut Request) -> IronResult<Response> {
+    let mut res = Response::with((::iron::status::Ok, ""));
+    
+    res.headers.set_raw("Access-Control-Allow-Methods", vec![Vec::from(
+        "GET, POST".as_bytes()
+    )]);
+    res.headers.set_raw("Access-Control-Allow-Headers", vec![Vec::from(
+        "Content-Type".as_bytes()
+    )]);
+    
+    Ok(res)
+}
+
 /// Store the provided `Request` body in a new `Block` inside the Locksidian blockchain.
 ///
 /// The generated block hash is then returned to the client:

@@ -18,6 +18,7 @@ pub fn routes() -> Router {
         // Block API
         show_head: get "/blocks" => endpoints::blocks::show_head,
         store_document: post "/blocks" => endpoints::blocks::store_document,
+        store_document_preflight: options "/blocks" => endpoints::blocks::preflight,
         get_block: get "/blocks/:hash" => endpoints::blocks::get_block,
         blocks_replicate: put "/blocks" => endpoints::blocks::replicate_block,
 
