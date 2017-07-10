@@ -7,16 +7,17 @@
 //!
 //! ## Overview
 //!
-//! Locksidian is a pure [Rust](https://www.rust-lang.org/) implementation of the
-//! [blockchain](https://en.wikipedia.org/wiki/Blockchain_(database)) technology, and was developed
-//! as a study project during our first year of Master's degree in *Software Architecture*.
+//! Locksidian offers the ability to store and certify the existence and integrity of any
+//! JSON document using a REST API. The documents are cryptographically signed and stored using a
+//! *blockchain* data structure distributed across a peer-to-peer network.
 //!
-//! Our objective is to provide the ability to store and certify the existence and integrity of any
-//! JSON document by storing and cryptographically signing them inside of the `Locksidian`
-//! blockchain.
+//! Locksidian was developed as a study project during our first year of Master's degree in
+//! *Software Architecture* using the language [Rust](https://www.rust-lang.org/).
 //!
-//! All the interactions between the peers of the peer-to-peer network is done using the HTTP(S)/1.1
-//! protocol through the use of REST APIs.
+//! The slides of the project presentation are available on [Google Drive](https://docs.google.com/presentation/d/1FumdQ6knop6-JQBaDjnq2sM8Oj5-1EI8OtxyQlNKbJU/).
+//!
+//! *Shard*, the Locksidian [Progressive Web App](https://developers.google.com/web/progressive-web-apps/),
+//! is available at: [shard.fries.io](http://shard.fries.io/)
 //!
 //! ## Installation
 //!
@@ -24,7 +25,7 @@
 //!
 //! ```bash
 //! $ docker build -t locksidian:latest .
-//! $ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d locksidian:latest
+//! $ docker run --name locksidian -v .:/root/.locksidian -p 8080:8080 -d locksidian:latest
 //! ```
 //!
 //! Or alternatively using Docker Compose:
@@ -44,7 +45,7 @@
 //! ```bash
 //! $ docker login registry.gitlab.com
 //! $ docker pull registry.gitlab.com/locksidian/locksidian:master
-//! $ docker run --name locksidian -v .:/opt/locksidian -p 8080:8080 -d registry.gitlab.com/locksidian/locksidian:master
+//! $ docker run --name locksidian -v .:/root/.locksidian -p 8080:8080 -d registry.gitlab.com/locksidian/locksidian:master
 //! ```
 //!
 //! ## Sources
@@ -57,12 +58,10 @@
 //!
 //! ## Specifications
 //!
-//! Some of the application concepts are explained below in what we could call a *specs draft*.
-//!
 //! ### Identity management
 //!
-//! Run the executable using an existing identity: `locksidian --identity={hash}`, or define the
-//! environment variable `LS_IDENTITY={hash}` to set an identity as *active*.
+//! Run the executable using an existing identity: `locksidian --identity={hash}` to set an identity
+//! as *active*.
 //!
 //! Generate a new identity using an existing PEM-encoded RSA keypair:
 //! `locksidian --identity-import="/path/to/keypair.pem"`.
@@ -70,22 +69,18 @@
 //! Generate a new identity from scratch by specifying the keypair size (defaults to 4096):
 //! `locksidian --identity-new={keypair_size}`.
 //!
-//! The `Identity` structure *could* be defined as follows:
+//! The `Identity` structure is defined as follows:
 //!
 //! ```rust
 //! struct Identity {
-//!     hash: String,       // Identity hash generated from the Public Key
-//!     keypair: PKey,      // RSA keypair associated to this Identity
+//!     hash: String,   // Identity hash generated from the Public Key
+//!     keypair: PKey,  // RSA keypair associated to this Identity
 //! }
 //! ```
 //!
-//! If no identity is specified at startup, or if the provided identity is invalid, a new one will
-//! be automatically generated.
-//!
-//! First, a new RSA keypair will be generated. If the `--identity-new` flag is set with a value
-//! respecting the constraint: `{value} >= 2048 && {value} % 1024 == 0`, its value is used as the
-//! size of the generated keypair. If no value is specified or if the specified value violates the
-//! constraint, a default value of `4096` is used.
+//! The `--identity-new` flag can be set with a value respecting the constraint:
+//! `{value} >= 2048 && {value} % 1024 == 0`, which is used as the size of the generated keypair.
+//! If no value is specified or if the specified value violates the constraint, an error is thrown.
 //!
 //! Once the keypair is generated, the Public Key is extracted in a PEM-encoded format (jump directly
 //! to this step if the `--identity-import` flag is set and points to a valid PEM-encoded RSA keypair).
@@ -96,91 +91,67 @@
 //! When a new identity is generated, it is automatically stored in the node's registry and flagged
 //! as the `active` identity, in order to be selected at startup if no identity hash is specified.
 //!
-//! When an identity is loaded from the registry, thanks to the `active` attribute or the `--identity`
-//! flag, its Public Key hash is recalculated and compared to the stored hash. If they don't
+//! When an identity is loaded from the registry - thanks to the `active` attribute set by the `--identity`
+//! flag - its Public Key hash is recalculated and compared to the stored hash. If they don't
 //! match, it means that this identity is corrupted: one of its hash or keypair was modified.
-//! The node automatically shuts himself down in order to keep the network safe, and this
-//! identity is removed from its local registry.
+//! The node automatically shuts himself down in order to keep the network safe.
 //!
-//! When a node emits a request to one of its peer using its REST API, it adds the following HTTP
-//! headers to the request: `X-LS-IDENTITY={hash}`, in order to be identified by its peer; and
-//! `X-LS-SIGNATURE={json_payload_signature}`, which corresponds to the request's payload signature,
-//! signed using the node's private key. When another node receives this request, it can verify that
-//! the request is emitted by the node identified by the provided identity hash by checking the payload
-//! signature using its peer's public key. If the signature can't be validated, the request is
-//! discarded.
+//! These identities are used to sign the data that is sent to the Locksidian blockchain: a node is
+//! always considered as the author of the block it mines, and therefore it has the right to sign the
+//! data it contains.
 //!
 //! ### Peer-to-Peer network
 //!
 //! In order to start the `Locksidian` service, run the executable by specifying a listening address:
 //! `locksidian --daemon={listen_addr}`, or define the following environment variable: `LS_DAEMON={listen_addr}`.
 //!
-//! Run the executable in *peer mode* by specifying an entrypoint using `--entrypoint={addr}`,
-//! or define the following environment variable: `LS_ENTRYPOINT={addr}`
+//! Run the executable in *peer mode* by specifying an entrypoint using `--entrypoint={addr}`.
 //!
-//! The `Peer`structure *could* be defined as follows:
+//! The `Peer`structure is defined as follows:
 //!
 //! ```rust
 //! struct Peer {
 //!     identity: String,   // Unique identifier for this peer
 //!     key: PKey,          // RSA public key
 //!     address: String,    // HTTP(S) URL with port number
+//!
 //!     last_sent: u64,     // Timestamp of the last time data were sent to this peer
 //!     last_recv: u64      // Timestamp of the last time data were received from this peer
 //! }
 //! ```
 //!
 //! The `entrypoint` is the address of any node in a `Locksidian` peer-to-peer network. During the
-//! node startup, a request containing the node public key and its address - in order to be reachable -
-//! is sent to the `POST /peers/register` endpoint of its `entrypoint`.
+//! node startup, it will fetch its own publicly accessible IP address by parsing monip.org website.
+//! Then a first request is issued to check that the `entrypoint`'s version of the Locksidian daemon
+//! matches its own. Then a request containing the node public key and public address is sent to the
+//! `POST /peers/register` endpoint of its `entrypoint`.
 //!
-//! The API request *could* be defined as follows:
-//!
-//! ```json
-//! Content-Type: "application/json"
-//! X-LS-IDENTITY: {identity.hash}
-//! X-LS-SIGNATURE: {json_payload_signature}
-//! {
-//!     "key": {identity.keypair.public_key},
-//!     "address": {node.address},
-//!     "height": {HEAD.height}
-//! }
-//! ```
+//! Note that a node can be started in a local-only mode using the `--local` flag. This mode will
+//! ignore the public IP discovery and advertise the `listen_addr`. Use it for testing purposes or
+//! strict local network only, otherwise your node will not be able to join any publicly accessible
+//! network.
 //!
 //! The entrypoint will initialize a new `Peer` structure using the provided information, and check
-//! the `X-LS-SIGNATURE` header value using the provided public key. If the signature is valid, the
-//! new peer is added to the entrypoint's local peers registry and the list of all its peers (including
-//! himself) is sent back to the new node.
+//! back the node's version of the Locksidian daemon. If the version matches, it sends back its own
+//! information.
 //!
-//! Then the entrypoint will broadcast the new peer data to all the peers in the network, by sending
-//! the serialized structure on their `POST /peers` endpoint. Each node will - obviously - check that
-//! the request comes from one of their peer (again, by validating the payload signature) before
-//! adding the new `Peer` structure to their local peers registry.
+//! Finally, the node will gather all of its entrypoint's peers by sending a `GET /peers` request
+//! in order to create its own list of peers. For each of them, it will check their daemon version
+//! before registering them. This way, a single peer address is needed to join the peer-to-peer network.
 //!
-//! This way, a single peer address is needed to join the peer-to-peer network, and each new peer
-//! data are sent to the entire network making it self-sufficient.
-//!
-//! If no entrypoint is specified at startup but the current node already has some peer addresses
-//! stored in its local registry, it will try to contact them one by one until its request to join
-//! the network is accepted.
-//!
-//! Beside of propagating the new peer to the network, the entrypoint node will use the `height`
-//! attribute of the new node to send him the next block that exists in the blockchain, if one exists.
-//! This way, a node that could have been disconnected for any period of time will still be able to
-//! catch up with its peers by fetching the missing blocks of its local registry.
+//! Once the registration process is completed, the node will check the current `HEAD` reference of
+//! its entrypoint, and sync down its blockchain if this block hash is unknown. This way, a node
+//! that could have been disconnected for any period of time will still be able to catch up with its
+//! peers by fetching the missing blocks in its local registry.
 //!
 //! But a node can also start without specifying an `entrypoint`, in what we'll call a *standalone mode*.
 //! When a node starts in standalone mode, it will not try to join any existing peer-to-peer network
 //! but will instead be the first `entrypoint` of a new `Locksidian` network! This way, you can
 //! easily create at will your own private network, hence your own private `Locksidian` blockchain.
 //!
-//! When a node starts in *standalone mode*, it has to create a first block in the blockchain called
-//! `ORIGIN`, with a sample JSON payload: `{"message": "Hello World!"}`. The `ORIGIN` block will be
-//! the anchor of any subsequent block added to the chain.
-//!
 //! ### Store a JSON document inside the blockchain
 //!
-//! The `Block` structure *could* be defined as follows:
+//! The `Block` structure is defined as follows:
 //!
 //! ```rust
 //! struct Block {
@@ -272,18 +243,19 @@
 //!
 //! As explained earlier, anyone can publish any JSON document to a `Locksidian` node... *by default*.
 //!
-//! In fact, you have the possibility to "protect" your node using either the `--protected` command
-//! line argument or the `LS_PROTECTED` environment variable.
+//! In fact, you have the possibility to "protect" your node using the `--protected` command
+//! line argument.
 //!
-//! When running in protected mode, the node will check for a valid signature matching its current
-//! `Identity` when receiving a new JSON document on its `/blocks` endpoint.
+//! When running in protected mode, the node will check for a valid body signature inside the
+//! `X-LS-SIGNATURE` HTTP header matching its current `Identity` when receiving a new JSON document
+//! on its `/blocks` endpoint.
 //!
 //! If there is no signature provided or if the signature does not match, a `403 Unauthorized` HTTP
 //! status will be returned to the client.
 //!
 //! ### Block replication 101
 //!
-//! In order to replicated a block, the following fields of the `Block` structure are sent to the
+//! In order to replicate a block, the following fields of the `Block` structure are sent to the
 //! `PUT /blocks` endpoint of a `Locksidian` node:
 //!
 //! ```json
@@ -301,9 +273,6 @@
 //!     "author": {Identity of the block's author}  |
 //! }
 //! ```
-//!
-//! Only a peer of the network is allowed to replicate a block: thus the payload signature is validated
-//! and a `403 Unauthorized` status is thrown in case of error.
 //!
 //! The document size in bytes and checksum will be recalculated and a match will be searched in the
 //! node's registry. If the recalculated size or hash does not match the provided values, a `400 Bad request`
@@ -340,6 +309,9 @@
 //! it will automatically be linked to its previous block when a *prune* of the registry will happen
 //! in the future.
 //!
+//! Once the replication process is successful, the node will broadcast it to all of its peers, to
+//! ensure that it reaches all of the network nodes.
+//!
 //! ### Retrieving a block
 //!
 //! In order to retrieve a block from the `Locksidian` blockchain, you just have to `GET /blocks/{hash}`
@@ -351,6 +323,8 @@
 //! (`HEAD.previous.next == HEAD`).
 //!
 //! ### Prune the blockchain!
+//!
+//! *Not Implemented Yet*
 //!
 //! In order to keep the blockchain consistent and to get rid of unused, useless or potentially
 //! altered, corrupted or falsified data, the blockchain (i.e. the entire registry of a node)
@@ -379,8 +353,8 @@
 
 // Documentation configuration
 #![doc(
-    html_logo_url = "https://gitlab.com/uploads/system/group/avatar/1167727/Logo4-borderless.png",
-    html_favicon_url = "https://gitlab.com/uploads/system/group/avatar/1167727/Logo4-borderless.png",
+    html_logo_url = "https://lh4.googleusercontent.com/hduE_EcCua9GDLIIGrRvadrGSmXKtwOgT0PmHyhTV03Aznat9htsmxb7Si-IwD-SgClKIZOoeBdwjm8=w1920-h992",
+    html_favicon_url = "https://lh4.googleusercontent.com/hduE_EcCua9GDLIIGrRvadrGSmXKtwOgT0PmHyhTV03Aznat9htsmxb7Si-IwD-SgClKIZOoeBdwjm8=w1920-h992",
     html_root_url = "http://locksidian.fries.io"
 )]
 
