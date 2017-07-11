@@ -14,14 +14,26 @@
 //! Locksidian was developed as a study project during our first year of Master's degree in
 //! *Software Architecture* using the language [Rust](https://www.rust-lang.org/).
 //!
-//! The slides of the project presentation are available on [Google Drive](https://docs.google.com/presentation/d/1FumdQ6knop6-JQBaDjnq2sM8Oj5-1EI8OtxyQlNKbJU/).
-//!
 //! *Shard*, the Locksidian [Progressive Web App](https://developers.google.com/web/progressive-web-apps/),
 //! is available at: [shard.fries.io](http://shard.fries.io/)
 //!
+//! The slides of the project presentation are available on [Google Drive](https://docs.google.com/presentation/d/1FumdQ6knop6-JQBaDjnq2sM8Oj5-1EI8OtxyQlNKbJU/).
+//!
+//! The latest code coverage report generated for the *master* branch can be found here: [locksidian.fries.io/coverage](http://locksidian.fries.io/coverage/)
+//!
+//! The Locksidian CLI documentation can be found here: [fn.main](fn.main.html)
+//!
 //! ## Installation
 //!
-//! ### From sources
+//! ### From sources (executable)
+//!
+//! ```bash
+//! $ cargo build --release
+//! $ mv target/release/locksidian /usr/bin/locksidian
+//! $ locksidian -i $(locksidian --identity-new 4096) -d 0.0.0.0:8080
+//! ```
+//!
+//! ### From sources (Docker)
 //!
 //! ```bash
 //! $ docker build -t locksidian:latest .
@@ -353,8 +365,8 @@
 
 // Documentation configuration
 #![doc(
-    html_logo_url = "https://lh4.googleusercontent.com/hduE_EcCua9GDLIIGrRvadrGSmXKtwOgT0PmHyhTV03Aznat9htsmxb7Si-IwD-SgClKIZOoeBdwjm8=w1920-h992",
-    html_favicon_url = "https://lh4.googleusercontent.com/hduE_EcCua9GDLIIGrRvadrGSmXKtwOgT0PmHyhTV03Aznat9htsmxb7Si-IwD-SgClKIZOoeBdwjm8=w1920-h992",
+    html_logo_url = "https://avatars0.githubusercontent.com/u/25910673?v=3&s=200",
+    html_favicon_url = "https://avatars0.githubusercontent.com/u/25910673?v=3&s=200",
     html_root_url = "http://locksidian.fries.io"
 )]
 
@@ -431,7 +443,22 @@ const DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 /// Package authors
 const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
-/// Locksidian entry point.
+/// Usage: locksidian [options]
+///
+/// Options:
+///
+/// * -h, --help: display this help menu
+/// * -v, --version: output version information and exit
+/// * --verbose: activates verbose mode
+/// * --trace: activates full log trace mode
+/// * -d, --daemon LISTEN_ADDR: starts the Locksidian daemon service and HTTP REST API
+/// * -p, --protected: starts the Locksidian daemon in protected mode. Only available when running with --daemon
+/// * --local: starts the Locksidian daemon in local networking mode, thus deactivating the routable address gathering
+/// * -i, --identity IDENTITY_HASH: switch the active node identity
+/// * --identity-new BIT_SIZE: generate a new identity (defaults to 4096 bit RSA keypair)
+/// * --identity-import PATH_TO_PEM_FILE: import the specified PEM-encoded RSA keypair as the new active identity
+/// * --identity-export IDENTITY_HASH: export the specified identity keypair to stdout
+/// * -e, --entrypoint ADDRESS: specify the IP address or hotsname of the network entrypoint
 fn main() {
     match setup_registry() {
         Ok(()) => (),
